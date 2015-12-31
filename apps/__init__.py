@@ -5,5 +5,10 @@ __doc__ = '''all modules used by UniboxSvc daemon process
             placed in this folder
 '''
 
+import os
+import sys
+
+"""include top level module"""
+sys.path.append(os.path.abspath('../'))
 
 

@@ -70,26 +70,25 @@ def http_get(url, data=None, timeout=15):
         }
 
 
-def http_post(url, host='', param={}):
+def http_post(url, host='', param={}, timeout=5):
     param = urllib.urlencode(param)
     header = {
         "Content-Type": "application/x-www-form-urlencoded",
         "Accept": "text/plain,text/html,application/json"
     }
     host = host.replace('http://', '').rstrip('/')
-    conn = httplib.HTTPConnection(host)
-    conn.request('POST', url, param, header)
-    resp = conn.getresponse()
-
-    """return response.body status_code status_text"""
     try:
+        conn = httplib.HTTPConnection(host, timeout=timeout)
+        conn.request('POST', url, param, header)
+        resp = conn.getresponse()
+
         body, status_code, status_text = resp.read(), resp.status, resp.reason
         conn.close()
     except Exception, e:
-        util.log.error(e.message)
-        body, status_text = [], 'failed'
+        util.log.error(str(e))
+        body, status_text = [], 'post failed'
 
-    return body, status_text
+    return body, status_text, status_code
 
 """模拟下载进度条"""
 def dl_hook(a,b,c):
@@ -126,16 +125,16 @@ def download_file(url, save_folder='', tmp_folder=None):
 
     if os.path.isfile(filepath):
         """get remote file size to check if the original data"""
-        # util.log.info('comparing remote file size with local')
+        print('comparing remote file size with local')
         req = urllib2.urlopen(url)
         rsize=req.info().getheaders('Content-Length')[0]
-        # util.log.info('remote file size is '+ rsize+ ' bytes')
+        print('remote file size is '+ rsize+ ' bytes')
 
         """get local file size"""
         lside=os.path.getsize(filepath)
         if int(rsize) != int(lside):
             """delete tmp downloaded file"""
-            util.log.info('local file '+filepath+' is not full downloaded, remove it')
+            print('local file '+filepath+' is not full downloaded, remove it')
             os.remove(filepath)
         else:
             return 'file_exists', filepath

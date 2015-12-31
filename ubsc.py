@@ -147,34 +147,34 @@ def main():
                 if 'http://' in sync_host:
                     sync_host = sync_host.replace('http://', '')
 
-                log.info('===>check network connection...')
+                print('===>check network connection...')
                 if lib.inet.check_connection(sync_host) is False:
                     log.error('network connection error')
                     return
-
-                log.info('===>connection ok, begin sync '+str(arg)+' items...')
+                print('===>connection ok')
+                log.info('===>begin sync ' + str(arg) + ' items...')
                 try:
-                    sync_st=time.time()
-                    if arg=='all':
+                    sync_st = time.time()
+                    if arg == 'all':
                         ub_sync.sync_all()
-                    elif arg=='ad':
+                    elif arg == 'ad':
                         ub_sync.sync_ad()
-                    elif arg=='title':
+                    elif arg == 'title':
                         ub_sync.sync_title()
-                    elif arg=='movie':
+                    elif arg == 'movie':
                         ub_sync.sync_movie()
-                    elif arg=='inv':
+                    elif arg == 'inv':
                         ub_sync.sync_inventory()
-                    elif arg=='kiosk':
+                    elif arg == 'kiosk':
                         ub_sync.sync_kiosk()
-                    elif arg=='slot':
+                    elif arg == 'slot':
                         ub_sync.sync_slot()
 
-                    sync_ed=time.time()
-                    log.info('===>end sync '+str(arg)+' items, time elapsed '+str(sync_ed-sync_st)+'sec')
+                    sync_ed = time.time()
+                    log.info('===>end sync ' + str(arg) + ' items, time elapsed ' + str(sync_ed - sync_st) + 'sec')
 
                 except Exception, e:
-                    log.error('===>sync '+str(arg)+' items failed, '+str(e))
+                    log.error('===>sync ' + str(arg) + ' items failed, ' + str(e))
 
 
 

@@ -11,7 +11,7 @@ import time
 import inspect
 import json
 
-import apps.Sync
+import apps
 
 import lib.logger
 import lib.util
