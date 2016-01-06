@@ -11,14 +11,61 @@ import os
 import subprocess
 import time
 
+import multiprocessing
+# from multiprocessing import Process
+# from multiprocessing import Pool
+
 import win32serviceutil
 
 import lib.logger
 
-import apps.Monitor.monitor
-import apps.Sync.sync
-
 _log = lib.logger.Logger().get()
+
+"""同步任务"""
+def sync_worker(interval=60):
+    import apps.Sync.sync as mod_sync
+    ub_sync=mod_sync.UniboxSync()
+
+    last_sync_time=int(ub_sync.get_ini('last_sync'))
+    down_sync_interval=int(ub_sync.get_ini('down_sync_interval'))
+    up_sync_interval=int(ub_sync.get_ini('inventory_sync_interval'))
+    svc_last_upsync=int(ub_sync.get_ini('svc_last_upsync'))
+    svc_last_downsync=int(ub_sync.get_ini('svc_last_downsync'))
+
+    sync_start=time.time()
+
+    """priority: sync-inventory is higher than down-sync"""
+    if sync_start - svc_last_upsync > up_sync_interval:
+        try:
+            ub_sync.sync_inventory()
+            ub_sync.update_ini('svc_last_upsync')
+        except Exception, e:
+            _log.error('[sync_worker]up sync failed: '+str(e))
+
+    if sync_start - svc_last_downsync > down_sync_interval:
+        """execute down-sync"""
+        try:
+            ub_sync.sync_ad()
+            ub_sync.sync_kiosk()
+            ub_sync.sync_slot()
+            ub_sync.sync_title()
+            ub_sync.sync_movie()
+
+            ub_sync.update_ini('svc_last_downsync')
+        except Exception, e:
+            _log.error('[sync_worker]down sync failed: '+str(e))
+
+    sync_end = time.time()
+    _log.logger.info('[UniboxSvc]end sync worker, time elapsed '+ str(sync_end-sync_start) + 'sec\n')
+
+    time.sleep(interval)
+
+"""监控任务"""
+def monitor_worker(interval=10):
+    import apps.Monitor.monitor as mod_monitor
+    ub_mon = mod_monitor.UniboxMonitor()
+    ub_mon.run()
+    time.sleep(interval)
 
 
 class UniboxSvc(win32serviceutil.ServiceFramework):
@@ -33,13 +80,53 @@ class UniboxSvc(win32serviceutil.ServiceFramework):
         self.logger = _log
 
     def SvcDoRun(self):
-        self.logger.info("unibox service is starting....")
+        self.logger.info("[UniboxSvc]:service is starting")
+
+        proc_pool=[]
+
+        sync_interval = 30
+        monitor_interval = 5
+        svc_interval = 5
+
+        '''daemon process list'''
+        fn_list = {
+            'sync': (sync_worker, sync_interval),
+            'monitor': (monitor_worker, monitor_interval)
+        }
+
+        '''init process pool'''
+        for n in fn_list.keys():
+            proc_pool.append(multiprocessing.Process(name=n, target=fn_list[n][0], args=(fn_list[n][1],)))
 
         while self.run:
-            self.logger.info('svc do something...')
+            try:
+                for p in proc_pool:
+                    '''process not started'''
+                    if p._popen is None:
+                        p.start()
 
-            """service minimal sleep"""
-            time.sleep(5)
+                    if p.is_alive() is False:
+                        '''process is stopped'''
+                        p.terminate()
+                        p.join()
+
+                        '''remove stopped process, folk again'''
+                        fn=p.name
+                        proc_pool.remove(p)
+                        new_proc=multiprocessing.Process(name=fn, target=fn_list[fn][0], args=(fn_list[fn][1],))
+                        proc_pool.append(new_proc)
+                        new_proc.start()
+
+            except Exception, err:
+                self.logger.error(str(err))
+
+            for p in proc_pool:
+                self.logger.info("child\tp.name:" + p.name + "\tp.pid:" + str(p.pid) + '\tis_alive:'+ str(p.is_alive()))
+
+            # p1.join(timeout=1)
+            # p2.join()
+
+            time.sleep(svc_interval)
 
     def SvcStop(self):
         self.logger.info("unibox service is stopping....")

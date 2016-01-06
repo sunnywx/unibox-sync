@@ -38,13 +38,14 @@ class UniboxMonitor():
         self.ds = {
             'kiosk_id': ''
             , 'kiosk_ip': ''
-            , 'connected': False
             , 'mem_used': ''
             , 'cpu_used': ''
             , 'disk_free_size': ''
             , 'udm_rental_started': False
             , 'udm_controller_started': False
             , 'last_sync_time': 0
+            , 'net_recv_bytes': 0  #网卡接收流量
+            , 'net_send_bytes': 0   #网卡发送流量
         }
 
         conf = self.get_config()
@@ -87,7 +88,12 @@ class UniboxMonitor():
         self.ds['cpu_used'] = '%d' % psutil.cpu_percent()
         self.ds['mem_used'] = '%d' % psutil.virtual_memory().percent
         self.ds['disk_free_size'] = '%d' % psutil.disk_usage('c:\\').free
-        self.ds['last_sync_time'] = (lib.util.parse_config(self.sync_conf_file, 'SYNC'))['last_sync']
+        self.ds['last_sync_time'] = (lib.util.parse_config(self.sync_conf_file, 'SYNC'))['svc_last_upsync']
+
+        net = psutil.net_io_counters()
+        self.ds['net_recv_bytes'] = '%d' % net.bytes_recv
+        self.ds['net_send_bytes'] = '%d' % net.bytes_sent
+
         return self.ds
 
     def stat(self):
@@ -161,8 +167,8 @@ class UniboxMonitor():
     def show_net(self):
         print u'###查看网络信息'
         net = psutil.net_io_counters()
-        bytes_sent = '{0:.2f} Mb'.format(net.bytes_recv / 1024 / 1024)
-        bytes_rcvd = '{0:.2f} Mb'.format(net.bytes_sent / 1024 / 1024)
+        bytes_sent = '{0:.2f} Mb'.format(net.bytes_sent / 1024 / 1024)
+        bytes_rcvd = '{0:.2f} Mb'.format(net.bytes_recv / 1024 / 1024)
         print u"网卡接收流量 %s 网卡发送流量 %s" % (bytes_rcvd, bytes_sent)
         self.endl()
 
@@ -177,33 +183,40 @@ class UniboxMonitor():
         print u"当前有%s个用户，分别是 %s" % (users_count, users_list)
         self.endl()
 
+    def run(self):
+        print '[Monitor]sending beacon request', time.ctime()
+
+        """模拟向服务器的beacon请求"""
+        data = self.get_attrs()
+        post_param = {
+            "data": json.dumps(data)
+        }
+        req_url = self.conf['server'] + '/api/beacon?kioskId=' + data['kiosk_id']
+        logger.info('[Monitor]req url: ' + req_url)
+
+        server=self.conf['server']
+        try:
+            resp_body, resp_status, resp_code = lib.inet.http_post(req_url, server, post_param)
+            if len(resp_body) > 0:
+                resp_body = json.loads(resp_body)
+
+            print resp_body, resp_status, resp_code, '\n'
+
+        except Exception, e:
+            logger.error(str(e))
 
 if __name__ == '__main__':
     import time
 
     ub_mon = UniboxMonitor()
-    try:
-        ub_mon.stat()
-    except Exception, e:
-        logger.error(str(e))
+    # try:
+    #     ub_mon.stat()
+    # except Exception, e:
+    #     logger.error(str(e))
 
-    # while True:
-    # logger.info( time.ctime()+': [Monitor]sending beacon request')
-    #
-    #     """模拟向服务器的beacon请求"""
-    #     data=ub_mon.get_attrs()
-    #     post_param = {
-    #         "data": json.dumps(data)
-    #     }
-    #     req_url=ub_mon.conf['server']+'/api/beacon?kioskId='+data['kiosk_id']
-    #     logger.info('req url: '+req_url)
-    #
-    #     resp_body, resp_status,resp_code = lib.inet.http_post(req_url, ub_mon.conf['server'], post_param)
-    #     if len(resp_body)>0:
-    #         resp_body = json.loads(resp_body)
-    #
-    #     print resp_body, resp_status, resp_code
-    #
-    #     time.sleep(10)
+    while True:
+        ub_mon.run()
+
+        time.sleep(10)
 
 

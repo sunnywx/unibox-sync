@@ -45,6 +45,7 @@ def usage():
             -s edit         修改同步配置
 
         -m|--monitor
+            -m run          运行监控
             -m stat         汇总监控数据
             -m plist        本机进程列表
             -m cpu          CPU使用率
@@ -129,7 +130,7 @@ def main():
                 elif arg == 'reload':
                     _svc.restart()
             else:
-                print 'ubsc -c|--control [install|auto|remove|start|reload|stop|status]'
+                print 'ubx install|auto|remove|start|reload|stop|status'
                 sys.exit(1)
 
         elif cmd in ['-s', '--sync']:
@@ -189,11 +190,16 @@ def main():
 
             ub_mon = mod_monitor.UniboxMonitor()
 
-            if arg == 'stat':
+            if arg == 'run':
+                print '[Monitor]Testing monitor every 5 sec\n'
+                while True:
+                    ub_mon.run()
+                    time.sleep(5)
+
+            elif arg == 'stat':
                 ub_mon.stat()
             elif arg == 'plist':
                 import psutil
-
                 psutil.test()
             elif arg == 'cpu':
                 ub_mon.show_cpu()
