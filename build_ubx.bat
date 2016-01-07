@@ -93,12 +93,12 @@ if exist build (
 )
 
 rem create app ini
-if not exist apps/Sync/sync_app.ini (
-    copy apps/Sync/sync_app.ini.sample apps/Sync/sync_app.ini
+if not exist apps\Sync\sync_app.ini (
+    copy apps\Sync\sync_app.ini.sample apps\Sync\sync_app.ini
 )
 
-if not exist apps/Monitor/monitor_app.ini (
-    copy apps/Monitor/monitor_app.ini.sample apps/Monitor/monitor_app.ini
+if not exist apps\Monitor\monitor_app.ini (
+    copy apps\Monitor\monitor_app.ini.sample apps\Monitor\monitor_app.ini
 )
 
 echo starting ubx...

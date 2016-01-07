@@ -42,8 +42,8 @@ class UniboxMonitor():
             , 'mem_used': ''
             , 'cpu_used': ''
             , 'disk_free_size': ''
-            , 'udm_rental_started': False
-            , 'udm_controller_started': False
+            , 'udm_rental_started': 0
+            , 'udm_controller_started': 0
             , 'last_sync_time': 0
             , 'net_recv_bytes': 0  #网卡接收流量
             , 'net_send_bytes': 0   #网卡发送流量
@@ -81,8 +81,8 @@ class UniboxMonitor():
         self.ds['kiosk_ip'] = self.get_client_ip()
 
         plist = self.get_process_list()
-        self.ds['udm_rental_started'] = self.conf['udm_rental'] in plist.keys()
-        self.ds['udm_controller_started'] = self.conf['udm_controller'] in plist.keys()
+        self.ds['udm_rental_started'] = 1 if self.conf['udm_rental'] in plist.keys() else 0
+        self.ds['udm_controller_started'] = 1 if self.conf['udm_controller'] in plist.keys() else 0
 
         self.ds['cpu_used'] = '%d' % psutil.cpu_percent()
         self.ds['mem_used'] = '%d' % psutil.virtual_memory().percent
