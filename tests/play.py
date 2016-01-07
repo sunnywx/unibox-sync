@@ -35,19 +35,20 @@ def worker():
     print 'starting:', p.name
 
 if __name__=='__main__':
-    multiprocessing.log_to_stderr(logging.DEBUG)
-    p=multiprocessing.Process(target=worker)
-    p.start()
-    p.join()
+    # multiprocessing.log_to_stderr(logging.DEBUG)
+    # p=multiprocessing.Process(target=worker)
+    # p.start()
+    # p.join()
 
-    # d=Process(name='daemon', target=daemon)
-    # d.daemon=True
-    #
-    # n=Process(name='non_daemon', target=non_daemon)
-    # n.daemon=False
-    #
-    # d.start()
-    # time.sleep(2)
-    # n.start()
+
+    d=Process(name='daemon', target=daemon)
+    d.daemon=True
+
+    n=Process(name='non_daemon', target=non_daemon)
+    n.daemon=False
+
+    d.start()
+    time.sleep(2)
+    n.start()
 
 

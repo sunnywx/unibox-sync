@@ -10,8 +10,9 @@ import ConfigParser
 import logging
 import datetime
 
-import lib.logger
-log=lib.logger.Logger().get()
+import logger
+
+log = logger.Logger().get()
 
 """parse config file"""
 def parse_config(ini_file, section='SYNC'):
@@ -30,31 +31,39 @@ def parse_config(ini_file, section='SYNC'):
         return dict(sections)
 
     except Exception, e:
-        log.error(e.message)
+        log.error(str(e))
         return -1
 
 def update_config(ini_file, set_item={}, section='SYNC'):
     conf = ConfigParser.ConfigParser()
 
     if os.path.isfile(ini_file):
-        conf.read(ini_file)
-        for key in set_item:
-            if conf.has_option(section, key):
-                conf.set(section, key, set_item[key])
+        try:
+            conf.read(ini_file)
+            for key in set_item:
+                if conf.has_option(section, key):
+                    conf.set(section, key, set_item[key])
 
-        with open(ini_file, 'w+') as config_file:
-            conf.write(config_file)
-            config_file.close()
+            with open(ini_file, 'w+') as config_file:
+                conf.write(config_file)
+                config_file.close()
 
             """on windows endline with \r\n"""
-            f=open(ini_file, 'r+')
-            """r'\n' raw string"""
-            conf_data=f.read().replace(r'\n', r'\r\n')
-            f.seek(0)
-            f.write(conf_data)
-            f.close()
+            f = open(ini_file, 'r+')
 
-        return True
+            """r'\n' raw string"""
+            conf_data=f.read()
+            if len(conf_data) > 0:
+                conf_data=conf_data.replace(r'\n', r'\r\n')
+                f.seek(0)
+                f.write(conf_data)
+
+            f.close()
+            return True
+
+        except Exception, e:
+            log.error(str(e))
+            return -1
 
     else:
         log.error('file not found: ' + ini_file)

@@ -17,11 +17,9 @@ import lib.logger
 import lib.util
 import lib.sqlite
 import lib.inet
+import lib.unibox as unibox
 
 base_dir = os.path.abspath(os.path.dirname(inspect.getfile(inspect.currentframe())))
-
-"""only for local test, should changed when deploy"""
-sandbox_dir = os.path.abspath(base_dir + os.sep + '../../sandbox/sync_app/Sync/')+os.sep
 
 logger = lib.logger.Logger('uniboxSync', base_dir).get()
 
@@ -29,6 +27,9 @@ logger = lib.logger.Logger('uniboxSync', base_dir).get()
 class UniboxSync():
     """配置文件路径"""
     conf_file = base_dir + '/sync_app.ini'
+
+    """sync程序操作的目录"""
+    sandbox_dir = 'c:/ubkiosk/'
 
     """同步配置项"""
     conf = {}
@@ -52,13 +53,13 @@ class UniboxSync():
         """parse sync app config"""
         sync_conf = self.get_config()
 
-        if len(sync_conf['sync']) == 0 or len(sync_conf['kiosk']) == 0:
+        if len(sync_conf) == 0:
             logger.error('invalid sync config file')
             sys.exit(-1)
 
-        """combine sync conf"""
-        sync_conf['sync'].update(sync_conf['kiosk'])
-        self.conf = sync_conf['sync']
+        sync_conf.update(unibox.kiosk_conf)
+
+        self.conf = sync_conf
         self.server_host = self.conf['sync_server']
         self.kiosk_id = self.conf['kioskid']
         self.owner_id = self.conf['ownerid']
@@ -74,24 +75,16 @@ class UniboxSync():
             'slot': self.server_host + '?m=Api&c=Sync&a=slot'
         }
 
-        self.db = lib.sqlite.Db(sandbox_dir + self.conf['local_db'])
-        self.tmp_folder = sandbox_dir + self.conf['local_tmp']
+        self.db = lib.sqlite.Db(self.sandbox_dir + self.conf['local_db'])
+        self.tmp_folder = self.sandbox_dir + self.conf['local_tmp']
 
 
     def get_config(self):
         sync_conf = lib.util.parse_config(self.conf_file)
-        kiosk_conf = ''
         if type(sync_conf) is dict:
-            """parse external kiosk conf file"""
-            kiosk_conf = lib.util.parse_config(sandbox_dir + sync_conf[string.lower('kioskConfigFile')], '*')
-            if type(kiosk_conf) is not dict:
-                kiosk_conf = {}
+            return sync_conf
         else:
-            sync_conf = {}
-        return {
-            'sync': sync_conf,
-            'kiosk': kiosk_conf
-        }
+            return {}
 
     def get_ini(self, key='last_sync'):
         if key in self.conf:
@@ -134,7 +127,7 @@ class UniboxSync():
         field = ['ad_id','position_id', 'media_type', 'ad_name', 'ad_link', 'ad_img',
                  'ad_url', 'start_time', 'end_time', 'click_count', 'enabled', 'version_num']
 
-        ad_path = sandbox_dir+self.conf['ad_local_folder']
+        ad_path = self.sandbox_dir+self.conf['ad_local_folder']
         cdn_base = self.conf['cdn_base']
         cnt_img = len(json_data)
         cnt_ignore = cnt_failed = cnt_downloaded = 0
@@ -195,8 +188,8 @@ class UniboxSync():
             logger.info('already updated, end sync')
             return
 
-        poster_prefix = sandbox_dir + self.conf['movie_local_folder']
-        thumb_prefix = sandbox_dir + self.conf['moviethumb_local_folder']
+        poster_prefix = self.sandbox_dir + self.conf['movie_local_folder']
+        thumb_prefix = self.sandbox_dir + self.conf['moviethumb_local_folder']
         cdn_base = self.conf['cdn_base']
 
         """download movie poster and thumbnail images"""

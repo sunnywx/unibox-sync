@@ -17,6 +17,7 @@ import lib.logger
 import lib.util
 import lib.sqlite
 import lib.inet
+import lib.unibox as unibox
 
 import psutil
 
@@ -69,12 +70,10 @@ class UniboxMonitor():
         return plist
 
     def get_kiosk_id(self):
-        kiosk_conf = lib.util.parse_config(self.conf['kiosk_conf'], '*')
-        return kiosk_conf['kioskid']
+        return unibox.kiosk_id
 
     def get_client_ip(self):
         import socket
-
         return socket.gethostbyname(socket.gethostname())
 
     def get_attrs(self):
