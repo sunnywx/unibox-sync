@@ -4,5 +4,4 @@ udm_rental = UDM_Rental.exe
 udm_controller = UDM_Controller.exe
 
 ;部署时修改此配置
-;server = http://monitor.dev.unibox.com.cn
-server = http://monitor.unibox.dev
+server = http://monitor.dev.unibox.com.cn

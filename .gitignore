@@ -5,4 +5,6 @@ build/
 **.pyc
 sandbox/
 tests/
-**.ini.sample
+#when deploy, mv ini.sample
+**sync_app.ini
+**monitor_app.ini

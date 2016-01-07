@@ -8,7 +8,7 @@ movie_local_folder = image/Poster/
 moviethumb_local_folder = image/Poster/thumbnail/
 down_sync_interval = 86400
 inventory_sync_interval = 60
-last_sync = 1452154393
-svc_last_downsync = 1452154741
-svc_last_upsync = 1452154866
+last_sync = 0
+svc_last_downsync = 0
+svc_last_upsync = 0
 

@@ -35,11 +35,15 @@ def parse_config(ini_file, section='SYNC'):
         return -1
 
 def update_config(ini_file, set_item={}, section='SYNC'):
+    """避免windows BOM头部 section报错"""
+    import codecs
+
     conf = ConfigParser.ConfigParser()
 
     if os.path.isfile(ini_file):
         try:
-            conf.read(ini_file)
+            conf.readfp(codecs.open(ini_file, "r", "utf-8-sig"))
+
             for key in set_item:
                 if conf.has_option(section, key):
                     conf.set(section, key, set_item[key])

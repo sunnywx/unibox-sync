@@ -1,2 +1,4 @@
 * text=auto
 *.ini   eol=crlf
+*.ini.sample    eol=crlf
+*.bat   eol=crlf
