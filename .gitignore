@@ -5,6 +5,4 @@ build/
 **.pyc
 sandbox/
 tests/
-**.zip
-**.tar.gz
 **.ini.sample
