@@ -10,6 +10,9 @@ SC QUERY UniboxSvc
 NET STOP UniboxSvc
 SC DELETE UniboxSvc
 
+rem remove original svc if exists
+NET STOP UniboxSyncService
+
 REM if not change to current dir
 REM when use adminstrator in windows
 REM cmd start dir is %windir%\system32 will raise error
@@ -107,7 +110,7 @@ cd /d dist
 
 ubx auto
 ubx start
-pause
+rem pause
 
 :END_CALL
 cd /d ..
