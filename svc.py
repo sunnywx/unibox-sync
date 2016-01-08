@@ -194,8 +194,11 @@ class SvcManager():
         self.open()
         try:
             # win32service.ControlService(self.hs, win32service.SERVICE_CONTROL_STOP)
-            os.system('taskkill /f /im pythonservice.exe')
-            os.system('net stop ' + self.svc_name)
+            st=os.system('taskkill /f /im pythonservice.exe')
+            if st==0:
+                print 'UniboxSvc is stopped'
+            else:
+                os.system('net stop ' + self.svc_name)
             # self.getStatus()
         except Exception, e:
             self.logger.error(e.message)
@@ -204,9 +207,12 @@ class SvcManager():
     def restart(self):
         self.open()
         try:
-            os.system('taskkill /f /im pythonservice.exe')
-            os.system('net stop ' + self.svc_name)
+            st = os.system('taskkill /f /im pythonservice.exe')
+            if st != 0:
+                os.system('net stop ' + self.svc_name)
+
             os.system('net start ' + self.svc_name)
+
         except Exception, e:
             self.logger.error(e.message)
             sys.exit(-1)

@@ -60,6 +60,10 @@ if exist ubx.spec (
     del ubx.spec
 )
 
+rem clearing .pyc
+rem for /r %f in (*.pyc) do del %f
+del /s *.pyc
+
 echo building requirements...
 REM python -m pip install pywin32
 REM python -m pip install pyinstaller
@@ -97,10 +101,12 @@ if exist build (
 
 rem create app ini
 if not exist apps\Sync\sync_app.ini (
+    echo rename [sync_app.ini.sample] to [sync_app.ini]
     copy apps\Sync\sync_app.ini.sample apps\Sync\sync_app.ini
 )
 
 if not exist apps\Monitor\monitor_app.ini (
+    echo rename [monitor_app.ini.sample] to [monitor_app.ini]
     copy apps\Monitor\monitor_app.ini.sample apps\Monitor\monitor_app.ini
 )
 
