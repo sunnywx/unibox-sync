@@ -16,7 +16,9 @@ def parse_kiosk_conf():
         os.path.dirname(inspect.getfile(inspect.currentframe())) + '/../unibox.ini', 'UNIBOX')
 
     if type(kiosk_conf) is dict:
-        extern_conf=util.parse_config(kiosk_conf['kiosk_conf_file'], '*')
+        extern_conf_file = kiosk_conf['ubkiosk_dir'] + 'Kiosk.conf'
+        extern_conf = util.parse_config(extern_conf_file, '*')
+
         if type(extern_conf) is dict:
             kiosk_conf.update(extern_conf)
         else:

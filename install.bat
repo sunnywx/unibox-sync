@@ -1,6 +1,6 @@
 @echo off
-echo building UniBox Service...
-echo Author wangXi(iwisunny@gmail.com)
+echo building unibox daemon program...
+echo Author: wangXi(iwisunny@gmail.com)
 echo --------------------------------------
 REM echo newline
 echo. &
@@ -92,9 +92,9 @@ if not exist %PYTHON_HOME%\Lib\site-packages\PyInstaller-3.0-py2.7.egg (
 :PAC_EXE
 REM list all packages in system
 REM python -m pip list
-python -m PyInstaller --clean --onefile --icon=app.ico ubx.py
+python -m PyInstaller --clean --onefile ubx.py
 
-echo removing build dir...
+echo removing tmp directory...
 if exist build (
     rd build /s/q
 )
@@ -110,7 +110,7 @@ if not exist apps\Monitor\monitor_app.ini (
     copy apps\Monitor\monitor_app.ini.sample apps\Monitor\monitor_app.ini
 )
 
-echo starting ubx...
+echo starting uniboxSvc...
 
 cd /d dist
 
@@ -120,4 +120,5 @@ rem pause
 
 :END_CALL
 cd /d ..
-cmd /c start ubx.bat
+echo starting Cli app
+cmd /c start cli.bat

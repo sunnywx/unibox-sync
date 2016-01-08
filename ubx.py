@@ -18,15 +18,15 @@ log = lib.logger.Logger().get()
 
 def usage():
     print """\
-    UniBox Daemon <wangxi@unibox.com.cn>
-    Usage: ubx [-opt|--option] cmd
-        install             将UniboxSvc安装到windows服务
-        auto                将UniboxSvc安装到服务并随系统自启动
+    unibox X controller <@wangXi>
+    Usage: ubx [-opt|--option] command
+        install             安装UniboxSvc服务
+        auto                安装UniboxSvc服务并随系统自启动
         start               启动UniboxSvc服务
         stop                停止UniboxSvc服务
         status              检查UniboxSvc服务状态
         remove              卸载UniboxSvc服务
-        reload              重启UniboxSvc服务(修改配置文件需要重启)
+        reload              重启UniboxSvc服务(修改配置需重启ubx)
         -l|--log            查看UniboxSvc日志
         -e|--edit           修改UniboxSvc配置
         -h|--help           列出帮助命令
@@ -39,8 +39,8 @@ def usage():
             -s movie        同步movie
             -s kiosk        同步kiosk
             -s slot         同步slot
-            -s inv          同步库存
-            -f|--force      强制同步 (仅用于向下同步和开发测试阶段)
+            -s inv          同步inventory
+            -f|--force      强制同步 (仅用于向下同步和开发测试)
             -s log          查看同步日志
             -s edit         修改同步配置
 
@@ -222,7 +222,7 @@ def main():
         else:
             if cmd in ('-v', '--version'):
                 """just a joke"""
-                print 'V1.0.build20160107'
+                print 'V1.0.1'
                 sys.exit(0)
             elif cmd in ('-h', '--help'):
                 usage()
