@@ -11,19 +11,20 @@ import logging
 import datetime
 
 import logger
+import codecs
 
 log = logger.Logger().get()
 
 """parse config file"""
 def parse_config(ini_file, section='SYNC'):
     conf = ConfigParser.ConfigParser()
-    
+
     if os.path.isfile(ini_file):
-        conf.read(ini_file)
+        conf.readfp(codecs.open(ini_file, "r", "utf-8-sig"))
     else:
         err_msg = 'file not found: ' + ini_file
         log.error(err_msg)
-        sys.exit(-1)
+        # sys.exit(-1)
 
     """try to get section"""
     try:
@@ -36,8 +37,6 @@ def parse_config(ini_file, section='SYNC'):
 
 def update_config(ini_file, set_item={}, section='SYNC'):
     """避免windows BOM头部 section报错"""
-    import codecs
-
     conf = ConfigParser.ConfigParser()
 
     if os.path.isfile(ini_file):
