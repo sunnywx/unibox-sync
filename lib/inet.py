@@ -31,9 +31,9 @@ def check_server_status(host='api.dev.unibox.com.cn', port=80, timeout=3):
     else:
         return False
 
-
+"""检查网络连接，重试三次，每次延时1500ms"""
 def check_connection(host='api.dev.unibox.com.cn'):
-    ping_st = os.system('ping -n 1 -w 2000 ' + str(host))
+    ping_st = os.system('ping -n 3 -w 1500 ' + str(host))
     return ping_st == 0
 
 

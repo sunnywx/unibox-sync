@@ -347,6 +347,7 @@ class UniboxSync():
         else:
             server_max_version = -1
 
+        logger.info('server max version='+ str(server_max_version))
         logger.info('up sync inventory, req_url: '+req_url+', kioskId='+self.kiosk_id+',ownerId='+self.owner_id)
         """save local db fields"""
         field=['title_id','kiosk_id','slot_id','member_id','owner_id',

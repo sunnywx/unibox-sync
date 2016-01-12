@@ -13,6 +13,8 @@ import time
 import lib.logger
 import lib.inet
 
+import traceback
+
 log = lib.logger.Logger().get()
 
 
@@ -161,6 +163,7 @@ def main():
                     return
                 print('===>connection ok')
                 log.info('===>begin sync ' + str(arg) + ' items...')
+
                 try:
                     sync_st = time.time()
                     if arg == 'all':
@@ -182,6 +185,9 @@ def main():
                     log.info('===>end sync ' + str(arg) + ' items, time elapsed ' + str(sync_ed - sync_st) + 'sec')
 
                 except Exception, e:
+                    exc_type, exc_value, exc_traceback = sys.exc_info()
+                    log.error(repr(traceback.format_exception(exc_type, exc_value, exc_traceback) ) )
+
                     log.error('===>sync ' + str(arg) + ' items failed, ' + str(e))
 
 

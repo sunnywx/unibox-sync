@@ -8,7 +8,6 @@ tests/
 #when deploy, mv ini.sample=>ini
 **sync_app.ini
 **monitor_app.ini
-install.bat
-cli.bat
 ubx.spec
 icons/
+**.exe
