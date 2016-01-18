@@ -7,4 +7,4 @@ udm_controller = c:/ubkiosk/UDM_Controller.exe
 monitor_interval = 10
 
 ;部署时修改此配置
-server = http://monitor.dev.unibox.com.cn
+server = http://monitor.unibox.com.cn

@@ -36,6 +36,9 @@ class UniboxMonitor():
     """º‡øÿ≈‰÷√œÓ"""
     conf = {}
 
+    """label if rental app init"""
+    rental_init=False
+
     def __init__(self):
         """define data structure to keep monitor data"""
         self.ds = {
@@ -100,12 +103,12 @@ class UniboxMonitor():
         """
 
         """TODO if rental app is halt, restart machine :( """
-        if self.conf['server'] != 'http://monitor.unibox.dev':
-            if self.ds['udm_rental_started'] == 0:
-                logger.info('[Monitor]rental app halted, restart machine')
-                os.system('shutdown /f /r /t 0')
-
-                sys.exit(-1)
+        # if self.conf['server'] != 'http://monitor.unibox.dev':
+        #     if self.ds['udm_rental_started'] == 0:
+        #         logger.info('[Monitor]rental app halted, restart machine')
+        #         os.system('shutdown /f /r /t 0')
+        #
+        #         sys.exit(-1)
 
 
         # try:
