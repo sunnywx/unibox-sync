@@ -20,7 +20,7 @@ log = lib.logger.Logger().get()
 
 def usage():
     print """\
-    unibox X controller <@wangXi>
+    unibox X controller <wangxi@unibox.com.cn>
     Usage: ubx [-opt|--option] command
         install             安装UniboxSvc服务
         auto                安装UniboxSvc服务并随系统自启动
@@ -200,7 +200,7 @@ def main():
                 print '[Monitor]Testing monitor every 5 sec\n'
                 while True:
                     ub_mon.run()
-                    time.sleep(5)
+                    time.sleep(ub_mon.monitor_interval)
 
             elif arg == 'stat':
                 ub_mon.stat()
@@ -223,7 +223,6 @@ def main():
                 conf_file = ub_mon.conf_file
                 os.system('notepad ' + conf_file)
                 sys.exit(0)
-
 
         else:
             if cmd in ('-v', '--version'):

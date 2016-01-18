@@ -119,13 +119,17 @@ class Db():
 
     """compare table's sequential field with version_num and fetch the max of both"""
     def get_max_version(self, tb_name, seq_field):
-        sql = 'select Max(Max(version_num), Max(' + seq_field + ')) from ' + tb_name
+        sql = 'select max(max(version_num), max(' + seq_field + ')) from ' + tb_name
         res = self.get_one(sql)
         if len(res) > 0:
             """when table is empty, res=(None,)"""
             if res[0] is None:
                 """when max_version=-1, need to fetch all records"""
                 return -1
-            return int(res[0])
+            elif res[0] == '':
+                """when max func failed, res[0]=='' """
+                return 0
+            else:
+                return int(res[0])
 
         return 0

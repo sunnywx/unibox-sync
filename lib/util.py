@@ -12,6 +12,7 @@ import datetime
 
 import logger
 import codecs
+import msvcrt
 
 log = logger.Logger().get()
 
@@ -43,17 +44,32 @@ def update_config(ini_file, set_item={}, section='SYNC'):
         try:
             conf.readfp(codecs.open(ini_file, "r", "utf-8-sig"))
 
-            for key in set_item:
-                if conf.has_option(section, key):
-                    conf.set(section, key, set_item[key])
+            if conf.has_section(section):
+                for key in set_item:
+                    if conf.has_option(section, key):
+                        conf.set(section, key, set_item[key])
+            else:
+                log.error('section:'+str(section)+'not found, copy '+str(ini_file)+'.sample')
+                """copy the sample file as ini file"""
+                from shutil import copyfile
+                sample_conf=ini_file+'.sample'
+                """unlink origin ini"""
+                os.remove(ini_file)
+                copyfile(sample_conf, ini_file)
 
-            with open(ini_file, 'w+') as config_file:
-                conf.write(config_file)
-                config_file.close()
+            fsize=os.path.getsize(ini_file)
+
+            config_file=open(ini_file, 'w+')
+            """on windows, write lock"""
+            fd=config_file.fileno()
+            msvcrt.locking(fd, msvcrt.LK_RLCK, fsize)
+            conf.write(config_file)
+            config_file.close()
+            msvcrt.locking(fd, msvcrt.LK_UNLCK, fsize)
 
             """on windows endline with \r\n"""
             f = open(ini_file, 'r+')
-
+            msvcrt.locking(f.fileno(), msvcrt.LK_RLCK, fsize)
             """r'\n' raw string"""
             conf_data=f.read()
             if len(conf_data) > 0:
@@ -62,6 +78,7 @@ def update_config(ini_file, set_item={}, section='SYNC'):
                 f.write(conf_data)
 
             f.close()
+            msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, fsize)
             return True
 
         except Exception, e:

@@ -26,6 +26,9 @@ def sync_worker(interval=60):
     import apps.Sync.sync as mod_sync
     ub_sync=mod_sync.UniboxSync()
 
+    if interval is None:
+        interval = 60
+
     last_sync_time=int(ub_sync.get_ini('last_sync'))
     down_sync_interval=int(ub_sync.get_ini('down_sync_interval'))
     up_sync_interval=int(ub_sync.get_ini('inventory_sync_interval'))
@@ -64,6 +67,9 @@ def sync_worker(interval=60):
 def monitor_worker(interval=10):
     import apps.Monitor.monitor as mod_monitor
     ub_mon = mod_monitor.UniboxMonitor()
+    if interval is None:
+        interval = 10
+
     ub_mon.run()
     time.sleep(interval)
 
@@ -84,14 +90,12 @@ class UniboxSvc(win32serviceutil.ServiceFramework):
 
         proc_pool=[]
 
-        sync_interval = 30
-        monitor_interval = 5
-        svc_interval = 5
+        svc_interval = 10
 
         '''daemon process list'''
         fn_list = {
-            'sync': (sync_worker, sync_interval),
-            'monitor': (monitor_worker, monitor_interval)
+            'sync': (sync_worker, None),
+            'monitor': (monitor_worker, None)
         }
 
         '''init process pool'''
@@ -103,28 +107,26 @@ class UniboxSvc(win32serviceutil.ServiceFramework):
                 for p in proc_pool:
                     '''process not started'''
                     if p._popen is None:
+                        self.logger.info('name='+str(p.name)+',pid='+str(p.pid)+' not started, start it')
                         p.start()
 
                     if p.is_alive() is False:
                         '''process is stopped'''
+                        self.logger.info('name='+str(p.name)+',pid='+str(p.pid)+' stopped, terminate it')
                         p.terminate()
-                        p.join()
+                        p.join(timeout=1)
 
                         '''remove stopped process, folk again'''
                         fn=p.name
                         proc_pool.remove(p)
                         new_proc=multiprocessing.Process(name=fn, target=fn_list[fn][0], args=(fn_list[fn][1],))
+                        self.logger.info(fn+' folk again, pid='+str(new_proc.pid))
+
                         proc_pool.append(new_proc)
                         new_proc.start()
 
             except Exception, err:
                 self.logger.error(str(err))
-
-            for p in proc_pool:
-                self.logger.info("child\tp.name:" + p.name + "\tp.pid:" + str(p.pid) + '\tis_alive:'+ str(p.is_alive()))
-
-            # p1.join(timeout=1)
-            # p2.join()
 
             time.sleep(svc_interval)
 
@@ -194,6 +196,7 @@ class SvcManager():
         self.open()
         try:
             # win32service.ControlService(self.hs, win32service.SERVICE_CONTROL_STOP)
+            """taskkill will kill all subprocess based on pythonservice.exe"""
             st=os.system('taskkill /f /im pythonservice.exe')
             if st==0:
                 print 'UniboxSvc is stopped'

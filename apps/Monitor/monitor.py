@@ -24,12 +24,14 @@ import psutil
 base_dir = os.path.abspath(os.path.dirname(inspect.getfile(inspect.currentframe())))
 logger = lib.logger.Logger('uniboxMonitor', base_dir).get()
 
-
 class UniboxMonitor():
     """配置文件路径"""
     conf_file = base_dir + '/monitor_app.ini'
 
     sync_conf_file = os.path.abspath(base_dir + '/../Sync/sync_app.ini')
+
+    """default monitor interval"""
+    monitor_interval=10
 
     """监控配置项"""
     conf = {}
@@ -60,7 +62,12 @@ class UniboxMonitor():
     def get_config(self):
         conf = lib.util.parse_config(self.conf_file, 'MONITOR')
         if type(conf) is dict:
+            if conf['monitor_interval'] == '' or conf['monitor_interval'] == 0:
+                conf['monitor_interval'] = self.monitor_interval
+            else:
+                self.monitor_interval = int(conf['monitor_interval'])
             return conf
+
         return {}
 
     def get_process_list(self):
@@ -81,8 +88,42 @@ class UniboxMonitor():
         self.ds['kiosk_ip'] = self.get_client_ip()
 
         plist = self.get_process_list()
-        self.ds['udm_rental_started'] = 1 if self.conf['udm_rental'] in plist.keys() else 0
-        self.ds['udm_controller_started'] = 1 if self.conf['udm_controller'] in plist.keys() else 0
+        rental_alias= (self.conf['udm_rental'])[self.conf['udm_rental'].rfind('/')+1:]
+        controller_alias = (self.conf['udm_controller'])[self.conf['udm_controller'].rfind('/')+1:]
+
+        self.ds['udm_rental_started'] = 1 if rental_alias in plist.keys() else 0
+        self.ds['udm_controller_started'] = 1 if controller_alias in plist.keys() else 0
+
+        """if white list proc is stopped, monitor should pull up those procs"""
+        """
+        udm_controller must be started before rental app
+        """
+
+        """TODO if rental app is halt, restart machine :( """
+        if self.conf['server'] != 'http://monitor.unibox.dev':
+            if self.ds['udm_rental_started'] == 0:
+                logger.info('[Monitor]rental app halted, restart machine')
+                os.system('shutdown /f /r /t 0')
+
+                sys.exit(-1)
+
+
+        # try:
+        #     import subprocess
+        #
+        #     if self.ds['udm_controller_started'] == 0:
+        #         logger.info('starting '+str(self.conf['udm_controller']))
+        #         """os.system will block main python prog"""
+        #         # os.system(self.conf['udm_controller'])
+        #         subprocess.Popen(self.conf['udm_controller'])
+        #
+        #     if self.ds['udm_rental_started'] == 0:
+        #         logger.info('starting '+str(self.conf['udm_rental']))
+        #         # subprocess.call(self.conf['udm_rental'])
+        #         subprocess.Popen(self.conf['udm_rental'])
+        #
+        # except Exception, e:
+        #     logger.error(str(e))
 
         self.ds['cpu_used'] = '%d' % psutil.cpu_percent()
         self.ds['mem_used'] = '%d' % psutil.virtual_memory().percent
@@ -185,16 +226,16 @@ class UniboxMonitor():
     def run(self):
         print '[Monitor]sending beacon request', time.ctime()
 
-        """模拟向服务器的beacon请求"""
-        data = self.get_attrs()
-        post_param = {
-            "data": json.dumps(data)
-        }
-        req_url = self.conf['server'] + '/api/beacon?kioskId=' + data['kiosk_id']
-        logger.info('[Monitor]req url: ' + req_url)
-
-        server=self.conf['server']
         try:
+            """模拟向服务器的beacon请求"""
+            data = self.get_attrs()
+            post_param = {
+                "data": json.dumps(data)
+            }
+            req_url = self.conf['server'] + '/api/beacon?kioskId=' + data['kiosk_id']
+            logger.info('[Monitor]req url: ' + req_url)
+
+            server=self.conf['server']
             resp_body, resp_status, resp_code = lib.inet.http_post(req_url, server, post_param)
             if len(resp_body) > 0:
                 resp_body = json.loads(resp_body)

@@ -1,7 +1,10 @@
 [MONITOR]
-;监控的进程, proc_alias=> proc_path | delegated master proc
-udm_rental = UDM_Rental.exe
-udm_controller = UDM_Controller.exe
+;监控的进程, process_alias=> process_path
+udm_rental = c:/ubkiosk/UDM_Rental.exe
+udm_controller = c:/ubkiosk/UDM_Controller.exe
+
+;监控间隔
+monitor_interval = 10
 
 ;部署时修改此配置
 server = http://monitor.dev.unibox.com.cn

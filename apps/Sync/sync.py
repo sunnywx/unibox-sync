@@ -140,7 +140,10 @@ class UniboxSync():
             item = {}
             for key in field:
                 if key in r:
-                    item[key] = r[key]
+                    if key == 'ad_id' and r[key] == '':
+                        continue
+                    else:
+                        item[key] = r[key]
                 else:
                     item[key] = ''
             data_ad[r['ad_id']] = item
@@ -223,13 +226,18 @@ class UniboxSync():
             thumb_img = cdn_base + str(r['movie_thumb'])
             item = {}
             for key in field:
-                if key == 'movie_img_url':
-                    val = r['movie_img']
-                elif key == 'movie_thumb_url':
-                    val = r['movie_thumb']
+                if key == 'movie_id' and r[key] == '':
+                    continue
                 else:
-                    val = r[key]
-                item[key] = val
+                    if key == 'movie_img_url':
+                        val = r['movie_img']
+                    elif key == 'movie_thumb_url':
+                        val = r['movie_thumb']
+                    else:
+                        val = r[key]
+
+                    item[key] = val
+
             data_movie[r['movie_id']] = item
 
             """downloading movie poster image"""
@@ -314,14 +322,21 @@ class UniboxSync():
             row_flags = []
             for key in field_title:
                 if key in r:
-                    row_title.append(r[key])
+                    """title_id must be check"""
+                    if key == 'title_id' and r[key] == '':
+                        continue
+                    else:
+                        row_title.append(r[key])
                 else:
                     row_title.append('')
             param_title.append(tuple(row_title))
 
             for key in field_flags:
                 if key in r:
-                    row_flags.append(r[key])
+                    if key == 'title_id' and r[key] == '':
+                        continue
+                    else:
+                        row_flags.append(r[key])
                 else:
                     row_flags.append('')
             param_flags.append(tuple(row_flags))
@@ -347,7 +362,7 @@ class UniboxSync():
         else:
             server_max_version = -1
 
-        logger.info('server max version='+ str(server_max_version))
+        logger.info('[inventory]server version_num='+ str(server_max_version))
         logger.info('up sync inventory, req_url: '+req_url+', kioskId='+self.kiosk_id+',ownerId='+self.owner_id)
         """save local db fields"""
         field=['title_id','kiosk_id','slot_id','member_id','owner_id',
@@ -426,7 +441,10 @@ class UniboxSync():
             item = {}
             for key in field:
                 if key in r:
-                    item[key] = r[key]
+                    if key == 'slot_id' and r[key] == '':
+                        continue
+                    else:
+                        item[key] = r[key]
                 else:
                     item[key] = ''
             data_slot[r['slot_id']] = item
@@ -472,7 +490,10 @@ class UniboxSync():
             item = {}
             for key in field:
                 if key in r:
-                    item[key] = r[key]
+                    if key == 'kiosk_id' and r[key] == '':
+                        continue
+                    else:
+                        item[key] = r[key]
                 else:
                     item[key] = ''
             data_kiosk[r['kiosk_id']] = item
