@@ -107,12 +107,12 @@ class UniboxSvc(win32serviceutil.ServiceFramework):
                 for p in proc_pool:
                     '''process not started'''
                     if p._popen is None:
-                        self.logger.info('name='+str(p.name)+',pid='+str(p.pid)+' not started, start it')
+                        # self.logger.info('name='+str(p.name)+',pid='+str(p.pid)+' not started, start it')
                         p.start()
 
                     if p.is_alive() is False:
                         '''process is stopped'''
-                        self.logger.info('name='+str(p.name)+',pid='+str(p.pid)+' stopped, terminate it')
+                        # self.logger.info('name='+str(p.name)+',pid='+str(p.pid)+' stopped, terminate it')
                         p.terminate()
                         p.join(timeout=1)
 
@@ -120,7 +120,7 @@ class UniboxSvc(win32serviceutil.ServiceFramework):
                         fn=p.name
                         proc_pool.remove(p)
                         new_proc=multiprocessing.Process(name=fn, target=fn_list[fn][0], args=(fn_list[fn][1],))
-                        self.logger.info(fn+' folk again, pid='+str(new_proc.pid))
+                        # self.logger.info(fn+' folk again, pid='+str(new_proc.pid))
 
                         proc_pool.append(new_proc)
                         new_proc.start()

@@ -52,6 +52,7 @@ class UniboxMonitor():
             , 'last_sync_time': 0
             , 'net_recv_bytes': 0  #网卡接收流量
             , 'net_send_bytes': 0   #网卡发送流量
+            , 'last_boot_time': 0   #上次开机时间
         }
 
         conf = self.get_config()
@@ -97,19 +98,22 @@ class UniboxMonitor():
         self.ds['udm_rental_started'] = 1 if rental_alias in plist.keys() else 0
         self.ds['udm_controller_started'] = 1 if controller_alias in plist.keys() else 0
 
+        self.ds['last_boot_time'] = int(psutil.boot_time())
+
         """if white list proc is stopped, monitor should pull up those procs"""
         """
         udm_controller must be started before rental app
         """
 
         """TODO if rental app is halt, restart machine :( """
-        # if self.conf['server'] != 'http://monitor.unibox.dev':
-        #     if self.ds['udm_rental_started'] == 0:
-        #         logger.info('[Monitor]rental app halted, restart machine')
-        #         os.system('shutdown /f /r /t 0')
-        #
-        #         sys.exit(-1)
+        """ monitor.unibox.dev is local dev server"""
+        if self.conf['server'] != 'http://monitor.unibox.dev':
 
+            if self.ds['udm_controller_started'] == 1 and (int(time.time())-int(psutil.boot_time()) > 5*60):
+                if self.ds['udm_rental_started'] == 0:
+                    logger.info('[Monitor]rental app halted, restart machine')
+                    os.system('shutdown /f /r /t 0')
+                    sys.exit(-1)
 
         # try:
         #     import subprocess
@@ -131,7 +135,7 @@ class UniboxMonitor():
         self.ds['cpu_used'] = '%d' % psutil.cpu_percent()
         self.ds['mem_used'] = '%d' % psutil.virtual_memory().percent
         self.ds['disk_free_size'] = '%d' % psutil.disk_usage('c:\\').free
-        self.ds['last_sync_time'] = (lib.util.parse_config(self.sync_conf_file, 'SYNC'))['svc_last_upsync']
+        self.ds['last_sync_time'] = (lib.util.parse_config(self.sync_conf_file, 'SYNC'))['last_sync']
 
         net = psutil.net_io_counters()
         self.ds['net_recv_bytes'] = '%d' % net.bytes_recv
