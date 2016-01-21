@@ -12,9 +12,13 @@ import datetime
 
 import logger
 import codecs
+import inspect
+import time
 # import msvcrt
 
 log = logger.Logger().get()
+
+cwd=os.path.dirname(os.path.dirname(inspect.getfile(inspect.currentframe())))
 
 """parse config file"""
 def parse_config(ini_file, section='SYNC'):
@@ -62,42 +66,48 @@ def update_config(ini_file, set_item={}, section='SYNC'):
             fsize=os.path.getsize(ini_file)
 
             """use plain file to emulate lock"""
-            lock_file=os.sep.join([os.getcwd(), 'sync.lock'])
+            lock_file=os.sep.join([cwd, 'sync.lock'])
+
+            """check lock file, if create time > 2min,remove it"""
+            if os.path.exists(lock_file) and (time.time()-os.path.getctime(lock_file)) > 120:
+                os.remove(lock_file)
 
             if not os.path.exists(lock_file):
-                try:
-                    flock=open(lock_file, 'w')
+                flock = open(lock_file, 'w')
 
-                    config_file=open(ini_file, 'w+')
+                try:
+                    config_file=open(ini_file, 'r+')
                     """on windows, write lock"""
                     # fd=config_file.fileno()
                     # msvcrt.locking(fd, msvcrt.LK_RLCK, fsize)
                     conf.write(config_file)
+                    config_file.flush()
                     # msvcrt.locking(fd, msvcrt.LK_UNLCK, fsize)
-                    config_file.close()
+                    # config_file.close()
 
                     """on windows endline with \r\n"""
-                    f = open(ini_file, 'r+')
                     # msvcrt.locking(f.fileno(), msvcrt.LK_RLCK, fsize)
+
                     """r'\n' raw string"""
-                    conf_data=f.read()
+                    conf_data=config_file.read()
+
                     if len(conf_data) > 0:
-                        conf_data=conf_data.replace(r'\n', r'\r\n')
-                        f.seek(0)
-                        f.write(conf_data)
+                        config_file.seek(0)
+                        config_file.write(conf_data.replace(r'\n', r'\r\n'))
+                        config_file.flush()
 
                     # msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, fsize)
-                    f.close()
-
-                    flock.close()
-                    os.remove(lock_file)
-
-                    return True
+                    config_file.close()
 
                 except Exception, e:
                     log.error(str(e))
 
+                flock.close()
+                os.remove(lock_file)
+                return True
+
             else:
+                log.info('lock file:'+lock_file+' exists, ini locked')
                 return False
 
         except Exception, e:

@@ -29,9 +29,9 @@ def sync_worker(interval=60):
     if interval is None:
         interval = 60
 
-    last_sync_time=int(ub_sync.get_ini('last_sync'))
     down_sync_interval=int(ub_sync.get_ini('down_sync_interval'))
     up_sync_interval=int(ub_sync.get_ini('inventory_sync_interval'))
+
     svc_last_upsync=int(ub_sync.get_ini('svc_last_upsync'))
     svc_last_downsync=int(ub_sync.get_ini('svc_last_downsync'))
 
@@ -53,7 +53,6 @@ def sync_worker(interval=60):
             ub_sync.sync_slot()
             ub_sync.sync_title()
             ub_sync.sync_movie()
-
             ub_sync.update_ini('svc_last_downsync')
         except Exception, e:
             _log.error('[sync_worker]down sync failed: '+str(e))

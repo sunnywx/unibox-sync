@@ -120,6 +120,7 @@ class UniboxSync():
         sync_start=time.time()
         json_data=lib.inet.fetch_data(req_url)
         if json_data is None or len(json_data)==0:
+            self.update_ini()
             logger.info('already updated, end sync')
             return
 
@@ -188,6 +189,7 @@ class UniboxSync():
         sync_start=time.time()
         json_data=lib.inet.fetch_data(req_url)
         if json_data is None or len(json_data)==0:
+            self.update_ini()
             logger.info('already updated, end sync')
             return
 
@@ -304,6 +306,7 @@ class UniboxSync():
         sync_start=time.time()
         json_data=lib.inet.fetch_data(req_url)
         if json_data is None or len(json_data)==0:
+            self.update_ini()
             logger.info('already updated, end sync')
             return
 
@@ -387,6 +390,7 @@ class UniboxSync():
             list_inventory.append(dic)
 
         if len(list_inventory) == 0:
+            self.update_ini()
             logger.info('already updated, end sync')
             return
 
@@ -431,6 +435,7 @@ class UniboxSync():
         field=['kiosk_model', 'slot_id', 'slot_disuse', 'distance', 'version_num']
         json_data=lib.inet.fetch_data(req_url)
         if json_data is None or len(json_data)==0:
+            self.update_ini()
             logger.info('already updated, end sync')
             return
 
@@ -469,6 +474,7 @@ class UniboxSync():
         logger.info('sync kiosk info from '+req_url)
         json_data = lib.inet.fetch_data(req_url)
         if json_data is None or len(json_data) == 0:
+            self.update_ini()
             logger.info('already updated, end sync')
             return
 
