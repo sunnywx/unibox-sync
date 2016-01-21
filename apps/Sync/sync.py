@@ -124,6 +124,11 @@ class UniboxSync():
             logger.info('already updated, end sync')
             return
 
+        if type(json_data) is tuple and json_data[0] == '[err]':
+            """failed to fetch data"""
+            logger.error(str(json_data))
+            return
+
         """local db fields need to save"""
         field = ['ad_id','position_id', 'media_type', 'ad_name', 'ad_link', 'ad_img',
                  'ad_url', 'start_time', 'end_time', 'click_count', 'enabled', 'version_num']
@@ -221,6 +226,11 @@ class UniboxSync():
             'thumb': []
         }
 
+        if type(json_data) is tuple and json_data[0] == '[err]':
+            """failed to fetch data"""
+            logger.error(str(json_data))
+            return
+
         for r in json_data:
             """first we download movie_poster, then download thumbnail,
             if these two are downloaded, then update this row's field, this will minimal db lock"""
@@ -310,6 +320,11 @@ class UniboxSync():
             logger.info('already updated, end sync')
             return
 
+        if type(json_data) is tuple and json_data[0] == '[err]':
+            """failed to fetch data"""
+            logger.error(str(json_data))
+            return
+
         """save to db"""
         field_title = ['title_id', 'movie_id', 'game_id', 'shop_price',
                        'market_price', 'daily_fee', 'deposit','stock_number',
@@ -360,7 +375,7 @@ class UniboxSync():
         req_url=self.uri_map['inventory']
         """up-sync fetch max-version from server"""
         server_max_version=lib.inet.fetch_data(self.server_host+'?m=Api&c=Sync&a=maxVersion&kioskId=' + self.kiosk_id)
-        if len(server_max_version) and server_max_version['max_ver']:
+        if type(server_max_version) is dict and server_max_version.has_key('max_ver'):
             server_max_version = int(server_max_version['max_ver'])
         else:
             server_max_version = -1
@@ -379,6 +394,8 @@ class UniboxSync():
             filter_cond = 'version_num>' + str(server_max_version)
 
         fetch_sql = "select " + ','.join(field) + " from inventory where " + filter_cond
+        logger.info('[SQL]' + fetch_sql)
+
         local_inventory = self.db.get_many(fetch_sql)
         list_inventory = []
         for item in local_inventory:
@@ -439,6 +456,11 @@ class UniboxSync():
             logger.info('already updated, end sync')
             return
 
+        if type(json_data) is tuple and json_data[0] == '[err]':
+            """failed to fetch data"""
+            logger.error(str(json_data))
+            return
+
         data_slot={}
         if type(json_data) is dict:
             json_data=[json_data]
@@ -476,6 +498,11 @@ class UniboxSync():
         if json_data is None or len(json_data) == 0:
             self.update_ini()
             logger.info('already updated, end sync')
+            return
+
+        if type(json_data) is tuple and json_data[0] == '[err]':
+            """failed to fetch data"""
+            logger.error(str(json_data))
             return
 
         """delete kiosk other than this kiosk_id"""

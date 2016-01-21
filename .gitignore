@@ -11,3 +11,6 @@ tests/
 ubx.spec
 icons/
 **.exe
+**.zip
+**.tar.gz
+**.tgz

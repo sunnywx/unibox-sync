@@ -243,11 +243,11 @@ class UniboxMonitor():
             logger.info('[Monitor]req url: ' + req_url)
 
             server=self.conf['server']
-            resp_body, resp_status, resp_code = lib.inet.http_post(req_url, server, post_param)
+            resp_body, resp_status = lib.inet.http_post(req_url, server, post_param)
             if len(resp_body) > 0:
                 resp_body = json.loads(resp_body)
 
-            print resp_body, resp_status, resp_code, '\n'
+            print resp_body, resp_status, '\n'
 
         except Exception, e:
             logger.error(str(e))

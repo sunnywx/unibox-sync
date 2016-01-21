@@ -88,7 +88,7 @@ def http_post(url, host='', param={}, timeout=5):
         util.log.error(str(e))
         body, status_text = [], 'post failed'
 
-    return body, status_text, status_code
+    return body, status_text
 
 """模拟下载进度条"""
 def dl_hook(a,b,c):
@@ -164,9 +164,9 @@ def fetch_data(req_url, data=None):
 
     if 'code' in data and data['code'] == unicode(-1):
         util.log.error('bad request uri, sync canceled')
-        return ('[err]', "bad request uri")
+        return '[err]', "bad request uri"
     elif data['status'] != 1:
         util.log.error('fail to download data, sync canceled')
-        return ('[err]', 'fail to fetch data')
+        return '[err]', 'fail to fetch data'
     else:
         return util.filter_input(data['data'])
