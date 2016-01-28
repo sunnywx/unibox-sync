@@ -107,13 +107,13 @@ class UniboxMonitor():
 
         """TODO if rental app is halt, restart machine :( """
         """ monitor.unibox.dev is local dev server"""
-        if self.conf['server'] != 'http://monitor.unibox.dev':
 
-            if self.ds['udm_controller_started'] == 1 and (int(time.time())-int(psutil.boot_time()) > 5*60):
-                if self.ds['udm_rental_started'] == 0:
-                    logger.info('[Monitor]rental app halted, restart machine')
-                    os.system('shutdown /f /r /t 0')
-                    sys.exit(-1)
+        # if self.conf['server'] != 'http://monitor.unibox.dev':
+        #     if self.ds['udm_controller_started'] == 1 and (int(time.time())-int(psutil.boot_time()) > 5*60):
+        #         if self.ds['udm_rental_started'] == 0:
+        #             logger.info('[Monitor]rental app halted, restart machine')
+        #             os.system('shutdown /f /r /t 0')
+        #             sys.exit(-1)
 
         # try:
         #     import subprocess

@@ -84,13 +84,14 @@ if not exist %PYTHON_HOME%\Lib\site-packages\psutil (
 )
 
 :PY_INSTALLER
-if not exist %PYTHON_HOME%\Lib\site-packages\PyInstaller-3.0-py2.7.egg (
-    cd deps/PyInstaller-3.0
-    python setup.py install
-    cd ../..
+rem if not exist %PYTHON_HOME%\Lib\site-packages\PyInstaller-3.0-py2.7.egg (
+rem     cd depend/PyInstaller
+rem     python setup.py install
+rem     cd ../..
+rem     goto PAC_EXE
+rem )
 
-    goto PAC_EXE
-)
+pip install PyInstaller
 
 :PAC_EXE
 REM list all packages in system

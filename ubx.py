@@ -227,7 +227,7 @@ def main():
         else:
             if cmd in ('-v', '--version'):
                 """just a joke"""
-                print 'V1.0.1'
+                print 'v1.2.3.build20160128'
                 sys.exit(0)
             elif cmd in ('-h', '--help'):
                 usage()
