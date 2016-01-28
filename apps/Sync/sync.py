@@ -375,7 +375,7 @@ class UniboxSync():
         req_url=self.uri_map['inventory']
         """up-sync fetch max-version from server"""
         server_max_version=lib.inet.fetch_data(self.server_host+'?m=Api&c=Sync&a=maxVersion&kioskId=' + self.kiosk_id)
-        if type(server_max_version) is dict and server_max_version.has_key('max_ver'):
+        if type(server_max_version) is dict and server_max_version['max_ver'] is not None:
             server_max_version = int(server_max_version['max_ver'])
         else:
             server_max_version = -1
