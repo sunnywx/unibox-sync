@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # _*_ coding: gb2312 _*_
 __author__ = 'wangxi'
-__doc__ = 'Unibox Service as daemon process'
+__doc__ = 'Unibox Service, unibox X controller'
 
 import sys
 import os
@@ -12,52 +12,52 @@ import time
 
 import lib.logger
 import lib.inet
-
+import lib.util
 import traceback
+
+import lib.unibox
 
 log = lib.logger.Logger().get()
 
 
 def usage():
     print """\
-    unibox X controller <wangxi@unibox.com.cn>
-    Usage: ubx [-opt|--option] command
-        install             安装UniboxSvc服务
-        auto                安装UniboxSvc服务并随系统自启动
-        start               启动UniboxSvc服务
-        stop                停止UniboxSvc服务
-        status              检查UniboxSvc服务状态
-        remove              卸载UniboxSvc服务
-        reload              重启UniboxSvc服务(修改配置需重启ubx)
-        -l|--log            查看UniboxSvc日志
-        -e|--edit           修改UniboxSvc配置
-        -h|--help           列出帮助命令
-        -v|--version        查看程序版本
-
-        -s|--sync
-            -s all          同步全部数据项
-            -s ad           同步ad
-            -s title        同步title
-            -s movie        同步movie
-            -s kiosk        同步kiosk
-            -s slot         同步slot
-            -s inv          同步inventory
-            -f|--force      强制同步 (仅用于向下同步和开发测试)
-            -s log          查看同步日志
-            -s edit         修改同步配置
-
-        -m|--monitor
-            -m run          运行监控
-            -m stat         汇总监控数据
-            -m plist        本机进程列表
-            -m cpu          CPU使用率
-            -m mem          内存使用率
-            -m disk         硬盘使用率
-            -m net          网络IO
-            -m log          查看监控日志
-            -m edit         修改监控配置
+py-ubx <iwisunny@gmail.com>
+Usage: ubx [-opt|--option] command
+    install             安装ubx
+    auto                安装ubx, 开机自启动
+    start               启动ubx
+    stop                停止ubx
+    status              检查ubx服务状态
+    remove              卸载ubx
+    reload              重启ubx服务
+    -l|--log            查看ubx日志
+    -e|--edit           打开ubx配置文件
+    -h|--help           ubx 使用帮助
+    -v|--version        ubx 版本号
+    ---------------------------------------+
+    -s|--sync
+        -s all          同步所有数据项
+        -s ad           同步ad
+        -s title        同步title
+        -s movie        同步movie
+        -s kiosk        同步kiosk
+        -s slot         同步slot
+        -s inv          同步inventory
+        -f|--force      强制同步
+        -s log          查看sync日志
+        -s edit         打开sync配置文件
+    ---------------------------------------+
+    -m|--monitor
+        -m run          dry-run, 模拟测试
+        -m stat         单次监控汇总
+        -m cpu          CPU使用率
+        -m mem          内存使用率
+        -m disk         硬盘使用率
+        -m net          网络IO
+        -m log          查看monitor日志
+        -m edit         打开monitor配置
     """
-
 
 def get_logfile():
     import datetime
@@ -190,23 +190,17 @@ def main():
 
                     log.error('===>sync ' + str(arg) + ' items failed, ' + str(e))
 
-
         elif cmd in ['-m', '--monitor']:
             import apps.Monitor.monitor as mod_monitor
-
             ub_mon = mod_monitor.UniboxMonitor()
 
             if arg == 'run':
-                print '[Monitor]Testing monitor every 5 sec\n'
+                print '[Monitor]Testing monitor func every 5 sec\n'
                 while True:
                     ub_mon.run()
                     time.sleep(ub_mon.monitor_interval)
-
             elif arg == 'stat':
                 ub_mon.stat()
-            elif arg == 'plist':
-                import psutil
-                psutil.test()
             elif arg == 'cpu':
                 ub_mon.show_cpu()
             elif arg == 'mem':
@@ -222,23 +216,20 @@ def main():
             elif arg == 'edit':
                 conf_file = ub_mon.conf_file
                 os.system('notepad ' + conf_file)
-                sys.exit(0)
-
         else:
             if cmd in ('-v', '--version'):
-                """just a joke"""
-                print 'v1.2.3.build20160128'
-                sys.exit(0)
+                print lib.unibox.get_app_version()
+
             elif cmd in ('-h', '--help'):
                 usage()
-                sys.exit(0)
+
             elif cmd in ('-l', '--log'):
                 log_file = get_cwd() + 'log/' + get_logfile()
                 os.system('notepad ' + log_file)
+
             elif cmd in ('-e', '--edit'):
                 conf_file = get_cwd()+'unibox.ini'
                 os.system('notepad ' + conf_file)
-                sys.exit(0)
 
 if __name__ == '__main__':
     main()

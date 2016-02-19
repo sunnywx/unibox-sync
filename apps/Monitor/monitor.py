@@ -50,9 +50,10 @@ class UniboxMonitor():
             , 'udm_rental_started': 0
             , 'udm_controller_started': 0
             , 'last_sync_time': 0
-            , 'net_recv_bytes': 0  #网卡接收流量
-            , 'net_send_bytes': 0   #网卡发送流量
-            , 'last_boot_time': 0   #上次开机时间
+            , 'net_recv_bytes': 0   # 网卡接收流量
+            , 'net_send_bytes': 0   # 网卡发送流量
+            , 'last_boot_time': 0   # 上次开机时间
+            , 'ubx_version': ''     # ubx 程序版本号
         }
 
         conf = self.get_config()
@@ -140,6 +141,8 @@ class UniboxMonitor():
         net = psutil.net_io_counters()
         self.ds['net_recv_bytes'] = '%d' % net.bytes_recv
         self.ds['net_send_bytes'] = '%d' % net.bytes_sent
+
+        self.ds['ubx_version'] = unibox.get_app_version()
 
         return self.ds
 
@@ -254,8 +257,8 @@ class UniboxMonitor():
 
 if __name__ == '__main__':
     import time
-
     ub_mon = UniboxMonitor()
+
     # try:
     #     ub_mon.stat()
     # except Exception, e:
@@ -263,7 +266,4 @@ if __name__ == '__main__':
 
     while True:
         ub_mon.run()
-
         time.sleep(10)
-
-

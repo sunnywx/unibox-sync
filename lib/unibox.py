@@ -11,9 +11,10 @@ import inspect
 
 log=logger.Logger().get()
 
+ini_file=os.path.dirname(inspect.getfile(inspect.currentframe())) + '/../unibox.ini'
+
 def parse_kiosk_conf():
-    kiosk_conf=util.parse_config(
-        os.path.dirname(inspect.getfile(inspect.currentframe())) + '/../unibox.ini', 'UNIBOX')
+    kiosk_conf=util.parse_config(ini_file, 'UNIBOX')
 
     if type(kiosk_conf) is dict:
         extern_conf_file = kiosk_conf['ubkiosk_dir'] + 'Kiosk.conf'
@@ -29,6 +30,25 @@ def parse_kiosk_conf():
         return {}
 
     return kiosk_conf
+
+def get_app_version():
+    # gen version num automatic
+    ver=util.parse_config(ini_file, 'UNIBOX')
+
+    if ver and ver['version'] != '':
+        return ver['version']
+    else:
+        git_tags=os.popen('git tag').read().strip('\n')
+        if git_tags:
+            # get last tag
+            lastest_ver=git_tags.split('\n')[-1]
+            # save lastest_ver into extern file
+            util.update_config(ini_file, {'version': lastest_ver}, 'UNIBOX')
+            return lastest_ver
+
+        else:
+            # fake initial ver
+            return 'v0.0.1'
 
 """export props"""
 kiosk_conf = parse_kiosk_conf()

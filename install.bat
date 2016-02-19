@@ -1,19 +1,31 @@
 @echo off
-echo building unibox daemon program...
+echo building py-ubx...
 echo Author: wangXi(iwisunny@gmail.com)
 echo --------------------------------------
 REM echo newline
 echo. &
 
+tasklist /FI "IMAGENAME eq pythonservice.exe" 2>NUL | find /I /N "pythonservice.exe">NUL
+if "%ERRORLEVEL%"=="0" (
+    echo uniboxSvc is running, kill it
+
+    rem force kill pythonservice.exe which hosts py-ubx
+    taskkill /f /im pythonservice.exe
+
+    goto STOP_ORIG_SVC
+
+) else (
+    echo 'uniboxSvc not running'
+)
+
 rem first remove previous installed sync svc
+:STOP_ORIG_SVC
 SC QUERY UniboxSvc
 NET STOP UniboxSvc
-SC DELETE UniboxSvc
+rem SC DELETE UniboxSvc
 
 rem remove original svc if exists
 NET STOP UniboxSyncService
-
-rem uninstall original service
 SC DELETE UniboxSyncService
 
 REM if not change to current dir

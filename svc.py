@@ -75,8 +75,8 @@ def monitor_worker(interval=10):
 
 class UniboxSvc(win32serviceutil.ServiceFramework):
     _svc_name_ = "UniboxSvc"
-    _svc_display_name_ = "Unibox Service"
-    _svc_description_ = "Unibox Service for products of UniBox.Inc"
+    _svc_display_name_ = "UniboxSvc"
+    _svc_description_ = "a python powered win32 service built for sync, monitor and more by UniBox.Inc "
 
     def __init__(self, args):
         win32serviceutil.ServiceFramework.__init__(self, args)
