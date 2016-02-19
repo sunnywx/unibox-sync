@@ -22,8 +22,9 @@ log = lib.logger.Logger().get()
 
 def usage():
     print """\
-py-ubx <iwisunny@gmail.com>
-Usage: ubx [-opt|--option] command
+py-ubx (Wang Xi, iwisunny@gmail.com)
+
+Usage: ubx [-opt|--option] cmd
     install             安装ubx
     auto                安装ubx, 开机自启动
     start               启动ubx
@@ -31,22 +32,22 @@ Usage: ubx [-opt|--option] command
     status              检查ubx服务状态
     remove              卸载ubx
     reload              重启ubx服务
-    -l|--log            查看ubx日志
-    -e|--edit           打开ubx配置文件
+    -l|--log            ubx日志
+    -e|--edit           ubx配置
     -h|--help           ubx 使用帮助
     -v|--version        ubx 版本号
     ---------------------------------------+
     -s|--sync
-        -s all          同步所有数据项
-        -s ad           同步ad
-        -s title        同步title
-        -s movie        同步movie
-        -s kiosk        同步kiosk
-        -s slot         同步slot
-        -s inv          同步inventory
+        -s all          同步全部数据
+        -s ad
+        -s title
+        -s movie
+        -s kiosk
+        -s slot
+        -s inv
         -f|--force      强制同步
-        -s log          查看sync日志
-        -s edit         打开sync配置文件
+        -s log          sync日志
+        -s edit         sync配置
     ---------------------------------------+
     -m|--monitor
         -m run          dry-run, 模拟测试
@@ -55,9 +56,9 @@ Usage: ubx [-opt|--option] command
         -m mem          内存使用率
         -m disk         硬盘使用率
         -m net          网络IO
-        -m log          查看monitor日志
-        -m edit         打开monitor配置
-    """
+        -m log          monitor日志
+        -m edit         monitor配置
+"""
 
 def get_logfile():
     import datetime
@@ -97,9 +98,9 @@ def main():
         args = ['-c', b]
 
     try:
-        opt, args = getopt.getopt(args, "hc:s:m:vle",
+        opt, args = getopt.getopt(args, "hc:s:m:vleg",
                                   ["help", "control=",
-                                   "sync=", "monitor=", "version", "log", "edit"])
+                                   "sync=", "monitor=", "version", "log", "edit", "git"])
     except getopt.GetoptError, err:
         log.error(err)
         sys.exit(-1)
@@ -219,6 +220,10 @@ def main():
         else:
             if cmd in ('-v', '--version'):
                 print lib.unibox.get_app_version()
+
+            elif cmd in ('-g', '--git'):
+                lib.unibox.set_app_version()
+                print 'ubx version: '+lib.unibox.get_app_version()
 
             elif cmd in ('-h', '--help'):
                 usage()

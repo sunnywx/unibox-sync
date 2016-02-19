@@ -5,12 +5,16 @@ build/
 **.pyc
 sandbox/
 tests/
-#when deploy, mv ini.sample=>ini
+
 **sync_app.ini
 **monitor_app.ini
 ubx.spec
+
 icons/
-**.exe
 **.zip
 **.tar.gz
 **.tgz
+profiler.bat
+git-build.py
+update-zip/
+todo.md

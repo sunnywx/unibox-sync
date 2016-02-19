@@ -8,6 +8,7 @@ import logger
 import os
 import sys
 import inspect
+import string
 
 log=logger.Logger().get()
 
@@ -49,6 +50,25 @@ def get_app_version():
         else:
             # fake initial ver
             return 'v0.0.1'
+
+def set_app_version():
+    git_tags=os.popen('git tag').read().strip('\n')
+    if git_tags:
+        # get last tag
+        lastest_ver=git_tags.split('\n')[-1]
+        # save lastest_ver into extern file
+        return util.update_config(ini_file, {'version': lastest_ver}, 'UNIBOX')
+
+    return False
+
+# based on git tag to compare two branchs version
+# if local_ver is less than online_ver, need update it
+def compare_version(local_ver, online_ver):
+    local_ver=local_ver.lstrip('v').rstrip('\n')
+    online_ver=online_ver.lstrip('v').rstrip('\n')
+    log.info('checking py-ubx version, local_ver='+local_ver+', online_ver='+online_ver)
+
+    return local_ver == online_ver
 
 """export props"""
 kiosk_conf = parse_kiosk_conf()

@@ -132,9 +132,18 @@ cd /d dist
 
 ubx auto
 ubx start
+
+rem post-install set app version
+git --version 2>nul
+if "%ERRORLEVEL%"=="0" (
+    ubx -g
+)
+
 rem pause
 
 :END_CALL
 cd /d ..
-echo starting Cli app
+
+echo. &
+echo starting cli program...
 cmd /c cli.bat

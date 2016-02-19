@@ -38,9 +38,9 @@ class Logger():
         for f in os.listdir(self.log_dir):
             if f.find('.log') > 0:
                 t_f = time.mktime(time.strptime(f.split('.')[0], '%Y%m%d'))
-                if t_f - self.t_today >= log_keep:
+                if self.t_today - t_f >= log_keep:
                     """remove this log"""
-                    os.remove(os.sep.join([self.log_dir, self.log_file]))
+                    os.remove(os.sep.join([self.log_dir, f]))
 
         _logger = logging.getLogger(self.log_label)
 

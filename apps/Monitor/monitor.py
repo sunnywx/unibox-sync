@@ -252,8 +252,14 @@ class UniboxMonitor():
 
             print resp_body, resp_status, '\n'
 
+            """获取服务端的最大版本号"""
+
+
+
+
         except Exception, e:
             logger.error(str(e))
+
 
 if __name__ == '__main__':
     import time
