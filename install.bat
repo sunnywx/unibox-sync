@@ -25,8 +25,8 @@ NET STOP UniboxSvc
 rem SC DELETE UniboxSvc
 
 rem remove original svc if exists
-NET STOP UniboxSyncService
-SC DELETE UniboxSyncService
+rem NET STOP UniboxSyncService
+rem SC DELETE UniboxSyncService
 
 REM if not change to current dir
 REM when use adminstrator in windows
