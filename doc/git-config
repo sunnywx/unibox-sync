@@ -1,0 +1,21 @@
+[core]
+        repositoryformatversion = 0
+        filemode = false
+        bare = false
+        logallrefupdates = true
+        symlinks = false
+        ignorecase = true
+        hideDotFiles = dotGitOnly
+        autocrlf = input
+[remote "origin"]
+        url = https://git.oschina.net/sunnyw/py-unibox-svc.git
+        fetch = +refs/heads/*:refs/remotes/origin/*
+[user]
+        name = sunnyw
+        email = iwisunny@sina.com
+[remote "github"]
+        url = https://github.com/iwisunny/py-ubx.git
+        fetch = +refs/heads/*:refs/remotes/github/*
+[branch "master"]
+        remote = github
+        merge = refs/heads/master

@@ -252,10 +252,8 @@ class UniboxMonitor():
 
             print resp_body, resp_status, '\n'
 
-            """获取服务端的最大版本号"""
-
-
-
+            """checking update-server"""
+            # unibox.checking_update()
 
         except Exception, e:
             logger.error(str(e))

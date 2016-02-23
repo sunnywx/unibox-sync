@@ -117,8 +117,14 @@ def download_file(url, save_folder='', tmp_folder=None):
         elif platform.system() == 'Windows':
             tmp_folder = 'c:\\tmp'
 
-    if not os.path.exists(save_folder):
-        os.mkdir(save_folder)
+    if not os.path.exists(tmp_folder):
+        os.mkdir(tmp_folder)
+
+    if save_folder == '':
+        save_folder=tmp_folder
+    else:
+        if not os.path.exists(save_folder):
+            os.mkdir(save_folder)
 
     filename = util.parse_filename(url)
     filepath = os.path.join(save_folder, filename)

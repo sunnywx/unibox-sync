@@ -15,6 +15,7 @@ import codecs
 import inspect
 import time
 # import msvcrt
+import platform
 
 log = logger.Logger().get()
 
@@ -170,3 +171,20 @@ def unpack_data(data={}):
             params.append( tuple(cur_list) )
 
     return field, params
+
+# set system tmp dolder
+def sys_tmp(tmp_folder=None, filename=''):
+    if tmp_folder is None or tmp_folder == '':
+        if platform.system() == 'Linux':
+            tmp_folder = '/tmp'
+        elif platform.system() == 'Windows':
+            tmp_folder = 'c:\\tmp'
+
+    if not os.path.exists(tmp_folder):
+        os.mkdir(tmp_folder)
+
+    if filename != '':
+        return tmp_folder+os.sep+filename
+    else:
+        return tmp_folder
+
