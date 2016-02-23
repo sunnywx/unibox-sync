@@ -75,7 +75,7 @@ def set_app_version():
 # 0 local == online
 # 1 local > online
 def compare_version(local_ver, online_ver):
-    suffix=['alpha', 'beta', 'release']
+    suffix=['alpha', 'beta', 'rc']
 
     local_ver=local_ver.lstrip('v').rstrip('\n')
     online_ver=online_ver.lstrip('v').rstrip('\n')
@@ -96,7 +96,7 @@ def compare_version(local_ver, online_ver):
         if local_ver.find('-') != -1:
             suf_local=local_ver.split('-')[-1]
             if online_ver.find('-') != -1:
-                # suffix must in ['alpha','beta','release']
+                # suffix must in ['alpha','beta','rc']
                 suf_online=online_ver.split('-')[-1]
                 if suf_local in suffix and suf_online in suffix:
                     return -1 if suf_local<suf_online else 1
@@ -120,8 +120,6 @@ def checking_update():
         online_ver=resp.read()
         local_ver=get_app_version()
         if compare_version(local_ver, online_ver) < 0:
-            print('need update')
-
             # download zip-ball
             zip_file='py-ubx-'+get_app_version()+'.zip'
 
@@ -134,10 +132,12 @@ def checking_update():
                 name_list=zip_ubx.namelist()
                 # print zip_ubx.extract('.gitignore')
 
-                zip_ubx.extractall('../update-zip')
+                extract_folder=util.sys_tmp(filename='ubx-update'+os.sep)
+                log.info('[updater]extract latest files to '+extract_folder)
+                zip_ubx.extractall(extract_folder)
 
         else:
-            print('py-ubx is the latest version')
+            log.info('py-ubx is latest version: '+local_ver)
 
     except Exception, e:
         log.error(str(e))
@@ -151,5 +151,3 @@ ubkiosk_dir = kiosk_conf['ubkiosk_dir']
 
 if __name__ == '__main__':
     checking_update()
-
-

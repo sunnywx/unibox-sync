@@ -89,7 +89,11 @@ def update_config(ini_file, set_item={}, section='SYNC'):
                     """on windows endline with \r\n"""
                     # msvcrt.locking(f.fileno(), msvcrt.LK_RLCK, fsize)
 
-                    """r'\n' raw string"""
+                    """
+                    r'\n' raw string
+                    rewind file pointer
+                    """
+                    config_file.seek(0)
                     conf_data=config_file.read()
 
                     if len(conf_data) > 0:
