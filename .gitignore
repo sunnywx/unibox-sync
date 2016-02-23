@@ -10,11 +10,9 @@ tests/
 **monitor_app.ini
 ubx.spec
 
-icons/
 **.zip
 **.tar.gz
 **.tgz
 profiler.bat
 git-build.py
-update-zip/
-todo.md
+doc/

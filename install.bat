@@ -20,8 +20,8 @@ if "%ERRORLEVEL%"=="0" (
 
 rem first remove previous installed sync svc
 :STOP_ORIG_SVC
-SC QUERY UniboxSvc
-NET STOP UniboxSvc
+rem SC QUERY UniboxSvc
+rem NET STOP UniboxSvc
 rem SC DELETE UniboxSvc
 
 rem remove original svc if exists

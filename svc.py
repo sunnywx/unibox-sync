@@ -198,7 +198,7 @@ class SvcManager():
             """taskkill will kill all subprocess based on pythonservice.exe"""
             st=os.system('taskkill /f /im pythonservice.exe')
             if st==0:
-                print 'UniboxSvc is stopped'
+                self.logger.info('UniboxSvc is stopped')
             else:
                 os.system('net stop ' + self.svc_name)
             # self.getStatus()

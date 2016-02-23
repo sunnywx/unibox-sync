@@ -107,6 +107,17 @@ def compare_version(local_ver, online_ver):
                 return -1
 
 
+def backup_files(from_path, to_path, clean_dst=True):
+    import shutil
+    if os.path.exists(to_path):
+        if clean_dst is True:
+            shutil.rmtree(to_path)
+
+    shutil.copytree(from_path, to_path)
+
+def ignore_list(src, names):
+    pass
+
 def checking_update():
     upd_svr=kiosk_conf['update_server'].strip('\'')     # careful trail slash :(
 
@@ -118,23 +129,84 @@ def checking_update():
     try:
         resp = urllib2.urlopen(req_online_ver)
         online_ver=resp.read()
+
         local_ver=get_app_version()
+
         if compare_version(local_ver, online_ver) < 0:
             # download zip-ball
             zip_file='py-ubx-'+get_app_version()+'.zip'
 
             import lib.inet as inet
 
-            print 'start downloading zip file...'
+            log.info('start downloading zip file: ' +upd_svr+zip_file)
             inet.download_file(upd_svr+zip_file)
 
-            with ZipFile(util.sys_tmp(None, zip_file), 'r') as zip_ubx:
-                name_list=zip_ubx.namelist()
-                # print zip_ubx.extract('.gitignore')
+            zip_ubx = ZipFile(util.sys_tmp(None, zip_file), 'r')
+            # name_list=zip_ubx.namelist()
+            # print zip_ubx.extract('.gitignore')
 
-                extract_folder=util.sys_tmp(filename='ubx-update'+os.sep)
-                log.info('[updater]extract latest files to '+extract_folder)
-                zip_ubx.extractall(extract_folder)
+            extract_folder=util.sys_tmp(filename='ubx-update')
+
+            log.info('[updater] extract latest files to '+extract_folder)
+            zip_ubx.extractall(extract_folder)
+
+            """backup original conf file and logs"""
+            orig_bak_dir=util.sys_tmp(filename='ubx-orig-bak')
+            if not os.path.exists(orig_bak_dir):
+                os.mkdir(orig_bak_dir)
+
+            import shutil
+            base_dir=os.path.dirname(ini_file)
+
+            """bak sync logs"""
+            log.info('[updater] backup original sync logs')
+            backup_files(os.sep.join([base_dir, 'apps/Sync/log']), os.sep.join([orig_bak_dir, 'sync_log']))
+            backup_files(os.sep.join([orig_bak_dir, 'sync_log']), os.sep.join([extract_folder, 'apps/Sync/log']))
+
+
+            """bak sync ini"""
+            log.info('[updater] backup original sync ini')
+            shutil.copy2(os.sep.join([base_dir, 'apps/Sync/sync_app.ini']), os.sep.join([orig_bak_dir, 'sync_app.ini']))
+            shutil.copy2(os.sep.join([orig_bak_dir, 'sync_app.ini']), os.sep.join([extract_folder, 'apps/Sync/sync_app.ini']))
+
+
+            """bak monitor logs"""
+            log.info('[updater] backup original monitor logs')
+            backup_files(os.sep.join([base_dir, 'apps/Monitor/log']), os.sep.join([orig_bak_dir, 'monitor_log']))
+            backup_files(os.sep.join([orig_bak_dir, 'monitor_log']), os.sep.join([extract_folder, 'apps/Monitor/log']))
+
+
+            """bak monitor ini"""
+            log.info('[updater] backup original monitor ini')
+            shutil.copy2(os.sep.join([base_dir, 'apps/Monitor/monitor_app.ini']), os.sep.join([orig_bak_dir, 'monitor_app.ini']))
+            shutil.copy2(os.sep.join([orig_bak_dir, 'monitor_app.ini']), os.sep.join([extract_folder, 'apps/Monitor/monitor_app.ini']))
+
+
+            """bak ubx logs"""
+            log.info('[updater] backup original ubx logs')
+            backup_files(os.sep.join([base_dir, 'log']), os.sep.join([orig_bak_dir, 'ubx_log']))
+            backup_files(os.sep.join([orig_bak_dir, 'ubx_log']), os.sep.join([extract_folder, 'log']))
+
+            import traceback
+            import svc
+
+            try:
+                svc_mgr=svc.SvcManager()
+                svc_mgr.stop()
+
+                dst='c:\\py-ubx'
+                if os.path.exists(dst):
+                    os.rename(dst, dst+'-bak')
+
+                backup_files(extract_folder, dst)
+
+                log.info('[updater] exec install.bat')
+                os.system(os.sep.join([dst, 'install.bat']))
+
+            except Exception, e:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                log.error(repr(traceback.format_exception(exc_type, exc_value, exc_traceback) ) )
+
 
         else:
             log.info('py-ubx is latest version: '+local_ver)

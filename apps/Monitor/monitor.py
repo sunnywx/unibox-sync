@@ -253,7 +253,7 @@ class UniboxMonitor():
             print resp_body, resp_status, '\n'
 
             """checking update-server"""
-            # unibox.checking_update()
+            unibox.checking_update()
 
         except Exception, e:
             logger.error(str(e))
