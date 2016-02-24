@@ -48,7 +48,6 @@ set PATH=%PATH%;%PYTHON_HOME%;%PYTHON_HOME%\Scripts;
 echo checking python environment...
 if not exist %PYTHON_HOME%\python.exe (
     echo python2.7 is not installed, please install python2.7
-    rem depend\python-2.7.10.msi
     pause
     exit
 
@@ -85,19 +84,21 @@ REM python -m pip install pyinstaller
 REM python -m pip install -r requirements.txt
 REM first install py-win32, then py-installer
 if not exist %PYTHON_HOME%\Lib\site-packages\pywin32_system32 (
-    depend\pywin32-219.win32-py2.7.exe
+    python dl_deps.py
+rem    deps\pywin32-219.win32-py2.7.exe
     goto PY_PSUTIL
 )
 
 :PY_PSUTIL
 if not exist %PYTHON_HOME%\Lib\site-packages\psutil (
-    depend\psutil-3.3.0.win32-py2.7.exe
+    python dl_deps.py
+rem    deps\psutil-3.3.0.win32-py2.7.exe
     goto PY_INSTALLER
 )
 
 :PY_INSTALLER
 rem if not exist %PYTHON_HOME%\Lib\site-packages\PyInstaller-3.0-py2.7.egg (
-rem     cd depend/PyInstaller
+rem     cd deps/PyInstaller
 rem     python setup.py install
 rem     cd ../..
 rem     goto PAC_EXE
@@ -134,16 +135,16 @@ ubx auto
 ubx start
 
 rem post-install set app version
-git --version 2>nul
-if "%ERRORLEVEL%"=="0" (
-    ubx -g
-)
+rem git --version 2>nul
+rem if "%ERRORLEVEL%"=="0" (
+rem    ubx -g
+rem )
 
 rem pause
 
 :END_CALL
 cd /d ..
 
-echo. &
-echo starting cli program...
-cmd /c cli.bat
+rem echo. &
+rem echo starting cli program...
+rem cmd /c cli.bat

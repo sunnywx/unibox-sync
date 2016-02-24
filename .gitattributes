@@ -2,3 +2,4 @@
 *.ini   eol=crlf
 *.ini.sample    eol=crlf
 *.bat   eol=crlf
+*.txt   eol=crlf

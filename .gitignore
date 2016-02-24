@@ -16,3 +16,4 @@ ubx.spec
 profiler.bat
 git-build.py
 doc/
+deps/
