@@ -16,6 +16,7 @@ import multiprocessing
 # from multiprocessing import Pool
 
 import win32serviceutil
+import traceback
 
 import lib.logger
 
@@ -42,6 +43,7 @@ def sync_worker(interval=60):
         try:
             ub_sync.sync_inventory()
             ub_sync.update_ini('svc_last_upsync')
+
         except Exception, e:
             _log.error('[sync_worker]up sync failed: '+str(e))
 
@@ -54,6 +56,7 @@ def sync_worker(interval=60):
             ub_sync.sync_title()
             ub_sync.sync_movie()
             ub_sync.update_ini('svc_last_downsync')
+
         except Exception, e:
             _log.error('[sync_worker]down sync failed: '+str(e))
 
@@ -61,6 +64,7 @@ def sync_worker(interval=60):
     _log.logger.info('[UniboxSvc]end sync worker, time elapsed '+ str(sync_end-sync_start) + 'sec\n')
 
     time.sleep(interval)
+
 
 """监控任务"""
 def monitor_worker(interval=10):
@@ -88,7 +92,6 @@ class UniboxSvc(win32serviceutil.ServiceFramework):
         self.logger.info("[UniboxSvc]:service is starting")
 
         proc_pool=[]
-
         svc_interval = 10
 
         '''daemon process list'''
@@ -101,8 +104,8 @@ class UniboxSvc(win32serviceutil.ServiceFramework):
         for n in fn_list.keys():
             proc_pool.append(multiprocessing.Process(name=n, target=fn_list[n][0], args=(fn_list[n][1],)))
 
-        while self.run:
-            try:
+        try:
+            while self.run:
                 for p in proc_pool:
                     '''process not started'''
                     if p._popen is None:
@@ -124,10 +127,11 @@ class UniboxSvc(win32serviceutil.ServiceFramework):
                         proc_pool.append(new_proc)
                         new_proc.start()
 
-            except Exception, err:
-                self.logger.error(str(err))
+                time.sleep(svc_interval)
 
-            time.sleep(svc_interval)
+        except Exception, e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            self.logger.error(repr(traceback.format_exception(exc_type, exc_value, exc_traceback)))
 
     def SvcStop(self):
         self.logger.info("unibox service is stopping....")
@@ -147,7 +151,7 @@ class SvcManager():
             subprocess.check_output('SC QUERY ' + self.svc_name)
         except Exception, e:
             self.logger.error('[service]:'+self.svc_name + ' not installed')
-            sys.exit(-1)
+            return False
 
         """open service control manager (SCM)"""
         """SC_MANAGER_ALL_ACCESS need root privilege"""
@@ -156,26 +160,32 @@ class SvcManager():
             """query unibox sync service"""
             self.hs = win32service.OpenService(self.scm, self.svc_name, win32service.SERVICE_ALL_ACCESS)
         except Exception, e:
-            self.logger.error( str(e[1]) + ': ' + str(e[2]) )
-            sys.exit(-1)
+            self.logger.error(str(e[1]) + ': ' + str(e[2]))
 
     def query(self, status):
         svcType, svcState, svcControls, err, svcErr, svcCP, svcWH = status
 
+        is_running=False
+
         if svcState == win32service.SERVICE_STOPPED:
-            print "The service is stopped"
+            self.logger.info("[svc] stopped")
         elif svcState == win32service.SERVICE_START_PENDING:
-            print "The service is starting"
+            self.logger.info("[svc] starting but pending")
+            is_running=True
         elif svcState == win32service.SERVICE_STOP_PENDING:
-            print "The service is stopping"
+            self.logger.info("[svc] stopping but pending")
         elif svcState == win32service.SERVICE_RUNNING:
-            print "The service is running"
+            self.logger.info("[svc] running")
+            is_running=True
+
+        return is_running
 
     def getStatus(self):
         self.open()
         status = win32service.QueryServiceStatus(self.hs)
-        self.query(status)
+        running_state=self.query(status)
         self.close()
+        return running_state
 
     def close(self):
         win32service.CloseServiceHandle(self.hs)
@@ -188,8 +198,7 @@ class SvcManager():
             os.system('net start ' + self.svc_name)
             # self.getStatus()
         except Exception, e:
-            self.logger.error(e.message)
-            sys.exit(-1)
+            self.logger.error(str(e))
 
     def stop(self):
         self.open()
@@ -203,8 +212,7 @@ class SvcManager():
                 os.system('net stop ' + self.svc_name)
             # self.getStatus()
         except Exception, e:
-            self.logger.error(e.message)
-            sys.exit(-1)
+            self.logger.error(str(e))
 
     def restart(self):
         self.open()
@@ -217,7 +225,6 @@ class SvcManager():
 
         except Exception, e:
             self.logger.error(e.message)
-            sys.exit(-1)
 
 """used by subprocess or main module"""
 if __name__ == '__main__':

@@ -115,7 +115,12 @@ def backup_files(from_path, to_path, clean_dst=True):
 
     shutil.copytree(from_path, to_path)
 
+'''copytree 函数的回调'''
 def ignore_list(src, names):
+    pass
+
+'''ubx程序回滚机制'''
+def rollback():
     pass
 
 def checking_update():
@@ -190,14 +195,16 @@ def checking_update():
             import traceback
             import svc
 
+            svc_mgr=svc.SvcManager()
+            svc_mgr.stop()
+
+            dst='c:\\py-ubx'
+            dst_bak=dst+'-bak'
+            if os.path.exists(dst):
+                '''rename original py-ubx dir as py-ubx-bak as a rollback dir'''
+                os.rename(dst, dst_bak)
+
             try:
-                svc_mgr=svc.SvcManager()
-                svc_mgr.stop()
-
-                dst='c:\\py-ubx'
-                if os.path.exists(dst):
-                    os.rename(dst, dst+'-bak')
-
                 backup_files(extract_folder, dst)
 
                 log.info('[updater] exec install.bat')
@@ -205,8 +212,11 @@ def checking_update():
 
             except Exception, e:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                log.error(repr(traceback.format_exception(exc_type, exc_value, exc_traceback) ) )
+                log.error(repr(traceback.format_exception(exc_type, exc_value, exc_traceback)))
 
+                '''exception raised, then rollback py-ubx'''
+                if svc_mgr.getStatus() is not True:
+                    os.system(os.sep.join([dst_bak, 'install.bat']))
 
         else:
             log.info('py-ubx is latest version: '+local_ver)

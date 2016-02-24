@@ -82,7 +82,8 @@ def update_config(ini_file, set_item={}, section='SYNC'):
                     # fd=config_file.fileno()
                     # msvcrt.locking(fd, msvcrt.LK_RLCK, fsize)
                     conf.write(config_file)
-                    config_file.flush()
+                    # config_file.flush()
+
                     # msvcrt.locking(fd, msvcrt.LK_UNLCK, fsize)
                     # config_file.close()
 
@@ -98,8 +99,11 @@ def update_config(ini_file, set_item={}, section='SYNC'):
 
                     if len(conf_data) > 0:
                         config_file.seek(0)
-                        config_file.write(conf_data.replace(r'\n', r'\r\n'))
+                        data=conf_data.replace(r'\n', r'\r\n').rstrip(os.linesep)
+                        config_file.write(data)
+
                         config_file.flush()
+                        os.fsync(config_file.fileno())
 
                     # msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, fsize)
                     config_file.close()
