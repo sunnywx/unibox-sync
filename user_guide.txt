@@ -6,9 +6,10 @@ py-ubx 安装部署文档
 
 
 【前言】
-py-ubx是一套分布式系统的客户端程序，开发目的是作为unibox租赁程序的服务支持层。
-提供租赁机数据同步，租赁机监控，为监控系统的web端提供各终端的数据支持，系统自动升级等。
-py-ubx的架构是创建一个称为 UniboxSvc 的windows系统服务，由该服务作为守护进程。
+py-ubx是unibox分布式系统的客户端程序，开发目的是作为unibox租赁程序的服务支持层。
+提供租赁机终端数据同步，租赁机监控，为监控系统的web端提供各终端的数据支持，终端自动升级等。
+
+py-ubx的架构是创建一个称为 UniboxSvc 的windows系统服务
 UniboxSvc管辖sync进程(处理同步作业) 和 monitor进程(处理监控作业)。
 
 
@@ -22,15 +23,10 @@ UniboxSvc管辖sync进程(处理同步作业) 和 monitor进程(处理监控作�
 1.py-ubx程序统一安装在 C:\py-ubx目录下，请严格遵守此目录，不要随意创建目录或者随意更改目录名。
 
 【手动安装】
-手动部署前，请进入c:\py-ubx目录，双击cli.bat, 输入 ubx status，如果提示[svc] running 则
-服务正在运行，此时需要停止服务。如果提示 [svc] stopped，则表示服务已停止。然后重命名py-ubx目录
-为py-ubx-bak 作为将来的版本回退。
-
-从http://pub.unibox.com.cn上下载最新版本的zip包, 最新版本号依据 http://pub.unibox.com.cn/update.txt
-将下载的 py-ubx-vx.x.x.zip 解压到C盘根目录，重命名目录为py-ubx，目录文件结构如下:
+从http://pub.unibox.com.cn下载最新版本的zip包, 最新版本号依据 http://pub.unibox.com.cn/update.txt
+将下载的 py-ubx-vx.x.x.zip 解压到C盘根目录，重命名目录为py-ubx，目录结构（核心文件和目录）如下:
 c:\py-ubx
     |-apps
-    |-dist-dev
     |-lib
     |-cli.bat
     |-install.bat
@@ -38,12 +34,15 @@ c:\py-ubx
     |-svc.py
     |-ubx.py
     |-unibox.ini
+    |-user_guide.txt
 
-双击install.bat 编译新的py-ubx，编译完会自动弹出命令行界面，到此安装完毕。
-如果编译过程出现任何报错的信息，请及时记录并告知开发者(wangxi@unibox.com.cn)
+请进入c:\py-ubx目录，以管理员权限运行install.bat 程序会自动编译py-ubx的可执行文件，编译完成命令行窗口会自动关闭。
+
+双击cli.bat, 输入 ubx status，如果提示[svc] running 则编译顺利通过，服务正在运行。
+如果提示 [svc] stopped，表示服务已停止，请输入 ubx --log 查看错误日志。
+记录具体报错信息，并告知开发者(wangxi@unibox.com.cn)
 
 
-【覆盖升级】
-从v1.2.5开始，py-ubx会自动升级，此过程完全不需要人干预。
-前面的【手动安装】仅仅适用于已经外布的机器，且版本低于v1.2.5的情况。
-
+【自动安装】
+从v1.2.5版本开始，py-ubx会自动升级，不需要人为干预。
+前面的【手动安装】仅适用于已经外布的租赁机，且版本号低于v1.2.5。

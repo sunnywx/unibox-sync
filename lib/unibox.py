@@ -139,7 +139,6 @@ def dl_deps():
     '''首次编译，下载python依赖包，以后在租赁机上重编ubx，可以从本地获取
         从 原始py-ubx目录或者tmp目录查找deps包， 查找失败再从网络获取
     '''
-    orig_deps=os.sep.join([dst_bak, 'deps'])
     tmp_deps=util.sys_tmp(filename='ubx-deps')
 
     '''check ubx-deps if empty'''
@@ -150,10 +149,7 @@ def dl_deps():
             '''tmp deps dir is not fullly downloaded, remove it'''
             shutil.rmtree(tmp_deps)
 
-    if os.path.exists(orig_deps):
-        backup_files(orig_deps, dst_deps)
-
-    elif os.path.exists(tmp_deps):
+    if os.path.exists(tmp_deps):
         backup_files(tmp_deps, dst_deps)
 
     else:
@@ -196,7 +192,7 @@ def checking_update():
             # download zip-ball
             zip_file='py-ubx-' + online_ver + '.zip'
 
-            log.info('[updater] download zip: ' + upd_svr + zip_file)
+            log.info('[updater] downloading latest zip: ' + upd_svr + zip_file)
             inet.download_file(upd_svr + zip_file)
 
             zip_ubx = ZipFile(util.sys_tmp(None, zip_file), 'r')
@@ -228,7 +224,7 @@ def checking_update():
                 os.chdir(os.path.dirname(dst))
                 cnt_copy_file=copy_recursive(extract_folder, dst)
 
-                log.info('[updater] call post-script: install.bat')
+                # log.info('[updater] call post-script: install.bat')
                 os.system(os.sep.join([dst, 'install.bat']))      # may raise access denied
                 log.info('[updater] py-ubx revision to '+online_ver+', overwrite '+cnt_copy_file+' files')
 
@@ -256,7 +252,8 @@ def checking_update():
                 dl_deps()
 
         else:
-            log.info('py-ubx is latest version: '+local_ver)
+            pass
+            # log.info('py-ubx is latest version: '+local_ver)
 
     except Exception, e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
