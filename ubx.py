@@ -14,6 +14,7 @@ import lib.logger
 import lib.inet
 import lib.util
 import traceback
+import string
 
 import lib.unibox
 
@@ -50,12 +51,12 @@ Usage: ubx [-opt|--option] cmd
         -s edit         sync配置
     ---------------------------------------+
     -m|--monitor
-        -m run          dry-run, 模拟测试
+        -m run          模拟监控请求
         -m stat         单次监控汇总
         -m cpu          CPU使用率
         -m mem          内存使用率
         -m disk         硬盘使用率
-        -m net          网络IO
+        -m net          网卡流量
         -m log          monitor日志
         -m edit         monitor配置
 """
@@ -73,6 +74,47 @@ def get_cwd():
     if cur_dir[len(cur_dir)-1] != '/':
         cur_dir += '/'
     return cur_dir
+
+"""
+local database migration
+"""
+def db_migration():
+    cwd=get_cwd()
+    mig_dir=cwd.replace('/', os.sep).rstrip(os.sep)+'/migration'
+    app_ver=lib.unibox.get_app_version()
+    # app_ver='v1.2.6-a'
+    mig_file=os.sep.join([mig_dir, 'mig_'+app_ver+'.sql'])
+
+    if os.path.exists(mig_file):
+        f=open(mig_file, 'rt')
+        mig_sql=string.join([line for line in f.read().strip().split('\n') if line.strip() != ''], os.linesep)
+        # tb_target=''
+        # tb_target_struct=sync_app.db.inspect_tb(tb_target)
+
+        log.info('[migration] begin migration based on '+mig_file)
+        try:
+            import apps.Sync.sync as sync
+            sync_app=sync.UniboxSync()
+            db=sync_app.db
+            db.connect()
+            cur=db.c
+            cur.executescript(mig_sql)
+            """output sql each row"""
+            for s in mig_sql.split(os.linesep):
+                log.info('[migration] '+s)
+
+            log.info('[migration] migration done')
+            db.close()
+
+        except Exception, e:
+            if e.message.find('duplicate column') != -1:
+                log.info('[migration] migration done')
+            else:
+                log.error('[migration] raise error: '+str(e))
+                sys.exit(-1)
+    else:
+        log.info('[migration] no migration file found')
+    sys.exit(0)
 
 
 def main():
@@ -98,9 +140,9 @@ def main():
         args = ['-c', b]
 
     try:
-        opt, args = getopt.getopt(args, "hc:s:m:vleg",
+        opt, args = getopt.getopt(args, "hc:s:m:vleu:",
                                   ["help", "control=",
-                                   "sync=", "monitor=", "version", "log", "edit", "git"])
+                                   "sync=", "monitor=", "version", "log", "edit", "util="])
     except getopt.GetoptError, err:
         log.error(err)
         sys.exit(-1)
@@ -135,6 +177,12 @@ def main():
             else:
                 print 'ubx install|auto|remove|start|reload|stop|status'
                 sys.exit(1)
+
+        elif cmd in ['-u', '--util']:
+            if arg=='dl_deps':
+                lib.unibox.dl_deps()
+            if arg=='db_mig':
+                db_migration()
 
         elif cmd in ['-s', '--sync']:
             import apps.Sync.sync as mod_sync
@@ -220,10 +268,6 @@ def main():
         else:
             if cmd in ('-v', '--version'):
                 print lib.unibox.get_app_version()
-
-            elif cmd in ('-g', '--git'):
-                lib.unibox.set_app_version()
-                print 'ubx version: '+lib.unibox.get_app_version()
 
             elif cmd in ('-h', '--help'):
                 usage()

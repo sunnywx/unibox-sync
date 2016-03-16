@@ -15,5 +15,5 @@ ubx.spec
 **.tgz
 profiler.bat
 git-build.py
-doc/
+#doc/
 deps/

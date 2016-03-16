@@ -182,11 +182,15 @@ def unpack_data(data={}):
 
 # set system tmp dolder
 def sys_tmp(tmp_folder=None, filename=''):
-    if tmp_folder is None or tmp_folder == '':
-        if platform.system() == 'Linux':
-            tmp_folder = '/tmp'
-        elif platform.system() == 'Windows':
-            tmp_folder = 'c:\\tmp'
+    if platform.system() == 'Linux':
+        tmp_base = '/tmp'
+    elif platform.system() == 'Windows':
+        tmp_base = 'c:\\tmp'
+
+    if not tmp_folder:
+        tmp_folder=tmp_base
+    else:
+        tmp_folder=os.sep.join([tmp_base, str(tmp_folder)])
 
     if not os.path.exists(tmp_folder):
         os.mkdir(tmp_folder)
@@ -195,4 +199,3 @@ def sys_tmp(tmp_folder=None, filename=''):
         return tmp_folder+os.sep+filename
     else:
         return tmp_folder
-

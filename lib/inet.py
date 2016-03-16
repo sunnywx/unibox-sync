@@ -74,7 +74,8 @@ def http_post(url, host='', param={}, timeout=5):
     param = urllib.urlencode(param)
     header = {
         "Content-Type": "application/x-www-form-urlencoded",
-        "Accept": "text/plain,text/html,application/json"
+        "Accept": "text/plain,text/html,application/json",
+        "Connection" :"Keep-Alive"
     }
     host = host.replace('http://', '').rstrip('/')
     try:
@@ -83,7 +84,7 @@ def http_post(url, host='', param={}, timeout=5):
         resp = conn.getresponse()
 
         body, status_code, status_text = resp.read(), resp.status, resp.reason
-        conn.close()
+        # conn.close()
     except Exception, e:
         util.log.error(str(e))
         body, status_text = [], 'post failed'
@@ -108,6 +109,22 @@ def dl_hook(a,b,c):
     sys.stdout.flush()
     time.sleep(0.5)
 
+def diff_rsize(fpath, remote_path):
+    """get remote file size to check if the original data"""
+    print('comparing remote:'+remote_path+' size with local:'+fpath)
+    try:
+        req = urllib2.urlopen(remote_path, timeout=5)
+        rsize=req.info().getheaders('Content-Length')[0]
+        """get local file size"""
+        lsize=os.path.getsize(fpath)
+        if int(rsize) == int(lsize):
+            print('remote '+remote_path+' size='+ rsize+ 'bytes, equals as local')
+            return True
+
+    except Exception, e:
+        util.log.error('remote '+remote_path+'size='+rsize+'bytes, local file broken')
+        return False
+
 """download remote file"""
 def download_file(url, save_folder='', tmp_folder=None):
     """先将文件下载到tmp目录,避免多个进程同时操作该文件"""
@@ -130,17 +147,9 @@ def download_file(url, save_folder='', tmp_folder=None):
     filepath = os.path.join(save_folder, filename)
 
     if os.path.isfile(filepath):
-        """get remote file size to check if the original data"""
-        print('comparing remote file size with local')
-        req = urllib2.urlopen(url)
-        rsize=req.info().getheaders('Content-Length')[0]
-        print('remote file size is '+ rsize+ ' bytes')
-
-        """get local file size"""
-        lside=os.path.getsize(filepath)
-        if int(rsize) != int(lside):
+        if diff_rsize(filepath, url) is False:
             """delete tmp downloaded file"""
-            print('local file '+filepath+' is not full downloaded, remove it')
+            print('local file '+filepath+' not fully downloaded, remove it')
             os.remove(filepath)
         else:
             return 'file_exists', filepath

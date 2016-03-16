@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # _*_ coding: utf-8 _*_
 __author__ = 'wangxi'
-__doc__ = 'common props and methods by unibox apps'
+__doc__ = 'common helpers for unibox apps'
 
 import util
 import logger
@@ -44,16 +44,14 @@ owner_id = kiosk_conf['ownerid']
 ubkiosk_dir = kiosk_conf['ubkiosk_dir']
 
 '''py-ubx destination dir'''
-dst='c:\\py-ubx'
+dst=kiosk_conf['ubx_dir']
+dst=dst.replace('/', os.sep).rstrip(os.sep)
 
 dst_deps=os.sep.join([dst, 'deps'])
 
-'''py-ubx backup destination dir'''
-dst_bak=dst+'-bak'
-
 '''py-ubx build dependencies'''
 build_deps=[
-    'psutil-3.3.0.win32-py2.7.exe',
+    # 'psutil-3.3.0.win32-py2.7.exe',
     'pywin32-219.win32-py2.7.exe'
 ]
 
@@ -136,34 +134,29 @@ def backup_files(from_path, to_path, clean_dst=True):
 
 
 def dl_deps():
-    '''首次编译，下载python依赖包，以后在租赁机上重编ubx，可以从本地获取
+    """首次编译，下载python依赖包，以后在租赁机上重编ubx，可以从本地获取
         从 原始py-ubx目录或者tmp目录查找deps包， 查找失败再从网络获取
-    '''
-    tmp_deps=util.sys_tmp(filename='ubx-deps')
+    """
+    tmp_deps=util.sys_tmp(tmp_folder='ubx-deps')
+    for f in build_deps:
+        local_f=os.sep.join([tmp_deps, f])
+        remote_f=upd_svr + 'ubx-deps/' + f
 
-    '''check ubx-deps if empty'''
-    deps_len=len(build_deps)
-    if os.path.exists(tmp_deps):
-        tmp_deps_len = len(os.listdir(tmp_deps))
-        if tmp_deps_len==0 or tmp_deps_len < deps_len:
-            '''tmp deps dir is not fullly downloaded, remove it'''
-            shutil.rmtree(tmp_deps)
+        '''if dep file in tmp, move it'''
+        if os.path.exists(util.sys_tmp(filename=f)):
+            shutil.move(util.sys_tmp(filename=f), tmp_deps+os.sep+f)
 
-    if os.path.exists(tmp_deps):
-        backup_files(tmp_deps, dst_deps)
+        if f in os.listdir(tmp_deps):
+            if inet.diff_rsize(local_f, remote_f) is False:
+                log.info(f+' is broken, fetch it again...')
+                os.unlink(local_f)
+                log.info('downloading '+remote_f+', just wait seconds...')
+                inet.download_file(remote_f, tmp_deps)
+        else:
+            log.info(f+' is missing, download it...')
+            inet.download_file(remote_f, tmp_deps)
 
-    else:
-        '''download deps from net'''
-        for f in build_deps:
-            inet.download_file(upd_svr + 'ubx-deps/' + f)
-            if not os.path.isdir(tmp_deps):
-                os.mkdir(tmp_deps)
-
-            tmp_f=util.sys_tmp(filename=f)
-            shutil.copy2(tmp_f, os.sep.join([tmp_deps, f]))
-            os.unlink(tmp_f)
-
-        backup_files(tmp_deps, dst_deps)
+    backup_files(tmp_deps, dst_deps)
 
 def copy_recursive(src, dst):
     count_copy=0
@@ -196,7 +189,7 @@ def checking_update():
             inet.download_file(upd_svr + zip_file)
 
             zip_ubx = ZipFile(util.sys_tmp(None, zip_file), 'r')
-            extract_folder=util.sys_tmp(filename='ubx-update')
+            extract_folder=util.sys_tmp(tmp_folder='ubx-update')
 
             log.info('[updater] extract '+online_ver+' files to '+extract_folder)
             zip_ubx.extractall(extract_folder)
@@ -226,7 +219,7 @@ def checking_update():
 
                 # log.info('[updater] call post-script: install.bat')
                 os.system(os.sep.join([dst, 'install.bat']))      # may raise access denied
-                log.info('[updater] py-ubx revision to '+online_ver+', overwrite '+cnt_copy_file+' files')
+                log.info('[updater] py-ubx revision to '+online_ver+', updated '+cnt_copy_file+' files')
 
             except Exception, e:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -247,12 +240,8 @@ def checking_update():
             # os.system('NET START UniboxSvc')
             svc_mgr.start()
 
-            '''lazy download build deps to optimize perf'''
-            if not os.path.exists(dst_deps):
-                dl_deps()
-
         else:
-            pass
+            return
             # log.info('py-ubx is latest version: '+local_ver)
 
     except Exception, e:
@@ -261,4 +250,5 @@ def checking_update():
 
 
 if __name__ == '__main__':
-    checking_update()
+    # checking_update()
+    dl_deps()

@@ -11,8 +11,6 @@ import time
 import inspect
 import json
 
-import apps
-
 import lib.logger
 import lib.util
 import lib.sqlite

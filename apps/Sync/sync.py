@@ -11,8 +11,6 @@ import time
 import inspect
 import json
 
-import apps
-
 import lib.logger
 import lib.util
 import lib.sqlite
@@ -217,7 +215,8 @@ class UniboxSync():
                  'audio_format', 'content_class', 'color', 'per_number', 'medium', 'bar_code',
                  'isrc_code', 'area_code', 'import_code', 'fn_name', 'box_office', 'bullet_films',
                  'issuing_company', 'copyright', 'synopsis', 'movie_desc',
-                 'movie_img', 'movie_img_url', 'movie_thumb', 'movie_thumb_url', 'version_num']
+                 'movie_img', 'movie_img_url', 'movie_thumb', 'movie_thumb_url', 'version_num',
+                 'movie_name_pinyin', 'movie_name_fpinyin']
         data_movie = {}
 
         """hold all fail-downloaded rows"""
@@ -328,7 +327,9 @@ class UniboxSync():
         """save to db"""
         field_title = ['title_id', 'movie_id', 'game_id', 'shop_price',
                        'market_price', 'daily_fee', 'deposit','stock_number',
-                       'rent_time', 'is_delete', 'is_blueray', 'version_num']
+                       'rent_time', 'is_delete', 'is_blueray', 'version_num',
+                       'contents_type', 'screen_def', 'screen_dim']
+
         field_flags = ['title_id', 'coming_soon_begin', 'coming_soon_end', 'hot_begin', 'hot_end',
                        'new_release_begin', 'new_release_end', 'available_begin', 'available_end',
                        'search_on_web_begin', 'search_on_web_end', 'browse_on_web_begin', 'browse_on_web_end',
@@ -539,8 +540,9 @@ class UniboxSync():
         logger.info('time elapsed '+ str(sync_end-sync_start) + 'sec\n')
 
 if __name__ == '__main__':
-    ub_sync=UniboxSync()
+    sync_app=UniboxSync()
+
     try:
-        ub_sync.sync_all()
+        sync_app.sync_all()
     except Exception, err:
-        logger.error(str(err))
+        logger.error('[sync_app] raise error: '+str(err))

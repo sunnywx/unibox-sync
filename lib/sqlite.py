@@ -133,3 +133,18 @@ class Db():
                 return int(res[0])
 
         return 0
+
+    """
+    PRAGMA table_info([table_name])
+    cid  name  type  notnull dflt_value  pk
+    return name=> type
+    """
+    def inspect_tb(self, tb_name):
+        q="PRAGMA table_info("+tb_name.strip()+")"
+        res=self.get_many(q)
+        struc={}
+        if type(res) is list and len(res)>0:
+            for row in res:
+                struc[row[1]]=row[2]
+
+        return struc

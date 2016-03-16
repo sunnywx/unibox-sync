@@ -2,12 +2,12 @@
 py-ubx 安装部署文档
 ======================
 
-【作者】汪曦  wangxi@unibox.com.cn
+【作者】汪曦  iwisunny@gmail.com
 
 
 【前言】
 py-ubx是unibox分布式系统的客户端程序，开发目的是作为unibox租赁程序的服务支持层。
-提供租赁机终端数据同步，租赁机监控，为监控系统的web端提供各终端的数据支持，终端自动升级等。
+提供租赁机终端数据同步，租赁机监控，为监控系统web端提供数据支持，终端自动升级等。
 
 py-ubx的架构是创建一个称为 UniboxSvc 的windows系统服务
 UniboxSvc管辖sync进程(处理同步作业) 和 monitor进程(处理监控作业)。
@@ -28,15 +28,14 @@ UniboxSvc管辖sync进程(处理同步作业) 和 monitor进程(处理监控作�
 c:\py-ubx
     |-apps
     |-lib
+    |-migration
     |-cli.bat
     |-install.bat
-    |-dl_deps.py
     |-svc.py
     |-ubx.py
     |-unibox.ini
-    |-user_guide.txt
 
-请进入c:\py-ubx目录，以管理员权限运行install.bat 程序会自动编译py-ubx的可执行文件，编译完成命令行窗口会自动关闭。
+请进入c:\py-ubx目录，以管理员权限运行install.bat 程序会自动编译py-ubx的可执行文件，编译完成窗口自动关闭。
 
 双击cli.bat, 输入 ubx status，如果提示[svc] running 则编译顺利通过，服务正在运行。
 如果提示 [svc] stopped，表示服务已停止，请输入 ubx --log 查看错误日志。
