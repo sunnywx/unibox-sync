@@ -234,18 +234,19 @@ class UniboxSync():
             """first we download movie_poster, then download thumbnail,
             if these two are downloaded, then update this row's field, this will minimal db lock"""
             poster_img = cdn_base + str(r['movie_img'])
-            thumb_img = cdn_base + str(r['movie_thumb'])
+            thumb_img = cdn_base + (str(r['movie_thumb']) if r.has_key('movie_thumb') else str(r['movie_img']))
             item = {}
             for key in field:
                 if key == 'movie_id' and r[key] == '':
                     continue
                 else:
-                    if key == 'movie_img_url':
-                        val = r['movie_img']
-                    elif key == 'movie_thumb_url':
-                        val = r['movie_thumb']
+                    if not r.has_key(key):
+                        if key in ['movie_img_url', 'movie_thumb', 'movie_thumb_url']:
+                            val=r['movie_img']
+                        else:
+                            val=''
                     else:
-                        val = r[key]
+                        val=r[key]
 
                     item[key] = val
 

@@ -3,7 +3,6 @@
 dist/
 build/
 **.pyc
-sandbox/
 tests/
 
 **sync_app.ini
@@ -13,7 +12,4 @@ ubx.spec
 **.zip
 **.tar.gz
 **.tgz
-profiler.bat
-git-build.py
-#doc/
 deps/

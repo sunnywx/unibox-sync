@@ -250,16 +250,16 @@ class UniboxMonitor():
 
             print resp_body, resp_status, '\n'
 
-            """checking update-server"""
-            unibox.checking_update()
-
         except Exception, e:
-            logger.error(str(e))
+            logger.error('[Monitor] '+str(e))
+
+        """checking update-server"""
+        unibox.checking_update()
 
 
 if __name__ == '__main__':
     import time
-    ub_mon = UniboxMonitor()
+    mon_app = UniboxMonitor()
 
     # try:
     #     ub_mon.stat()
@@ -267,5 +267,5 @@ if __name__ == '__main__':
     #     logger.error(str(e))
 
     while True:
-        ub_mon.run()
+        mon_app.run()
         time.sleep(10)

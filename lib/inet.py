@@ -115,6 +115,7 @@ def diff_rsize(fpath, remote_path):
     try:
         req = urllib2.urlopen(remote_path, timeout=5)
         rsize=req.info().getheaders('Content-Length')[0]
+
         """get local file size"""
         lsize=os.path.getsize(fpath)
         if int(rsize) == int(lsize):
@@ -122,7 +123,13 @@ def diff_rsize(fpath, remote_path):
             return True
 
     except Exception, e:
-        util.log.error('remote '+remote_path+'size='+rsize+'bytes, local file broken')
+        util.log.error(str(e.message))
+        # if e.code == 404:
+        #     util.log.error(remote_path+','+str(e.msg))
+        #     return True
+        # else:
+        #     util.log.error('remote '+remote_path+' not match local, or fetch timeout')
+
         return False
 
 """download remote file"""
