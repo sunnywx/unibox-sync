@@ -59,10 +59,12 @@ del /s *.pyc
 echo building py-ubx dependencies...
 python -m pip install -r requirements.txt
 
-if not exist %PYTHON_HOME%\Lib\site-packages\pywin32_system32 (
-    python ubx.py --util dl_deps
-    deps\pywin32-219.win32-py2.7.exe
-)
+python ubx.py --util dl_deps
+
+rem if not exist %PYTHON_HOME%\Lib\site-packages\pywin32_system32 (
+rem     python ubx.py --util dl_deps
+rem     deps\pywin32-219.win32-py2.7.exe
+rem )
 
 REM python -m pip list
 python -m PyInstaller --clean --onefile ubx.py

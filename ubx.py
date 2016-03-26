@@ -181,6 +181,7 @@ def main():
         elif cmd in ['-u', '--util']:
             if arg=='dl_deps':
                 lib.unibox.dl_deps()
+
             if arg=='db_mig':
                 db_migration()
 
