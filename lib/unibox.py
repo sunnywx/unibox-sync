@@ -161,8 +161,8 @@ def dl_deps():
             remote_f=upd_svr + 'ubx-deps/' + f
 
             '''if dep file in tmp, move it'''
-            if os.path.exists(util.sys_tmp(filename=f)):
-                shutil.move(util.sys_tmp(filename=f), tmp_deps+os.sep+f)
+            # if os.path.exists(util.sys_tmp(filename=f)):
+            #     shutil.move(util.sys_tmp(filename=f), tmp_deps+os.sep+f)
 
             if f in os.listdir(tmp_deps):
                 if inet.diff_rsize(local_f, remote_f) is False:
