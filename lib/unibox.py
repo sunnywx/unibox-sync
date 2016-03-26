@@ -136,26 +136,51 @@ def dl_deps():
     """首次编译，下载python依赖包，以后在租赁机上重编ubx，可以从本地获取
         从 原始py-ubx目录或者tmp目录查找deps包， 查找失败再从网络获取
     """
-    tmp_deps=util.sys_tmp(tmp_folder='ubx-deps')
-    for f in build_deps:
-        local_f=os.sep.join([tmp_deps, f])
-        remote_f=upd_svr + 'ubx-deps/' + f
+    # cwd=os.getcwd()
+    # install_log=os.popen(os.sep.join([cwd,'install.bat']))
+    #
+    # try:
+    #     log.info(str(install_log.read()))
+    # except Exception,e:
+    #     log.error(str(e.message))
 
-        '''if dep file in tmp, move it'''
-        if os.path.exists(util.sys_tmp(filename=f)):
-            shutil.move(util.sys_tmp(filename=f), tmp_deps+os.sep+f)
+    # check if pywin32 lib in pip list
+    pywin32_installed=False
 
-        if f in os.listdir(tmp_deps):
-            if inet.diff_rsize(local_f, remote_f) is False:
-                log.info(f+' is broken, fetch it again...')
-                os.unlink(local_f)
-                log.info('downloading '+remote_f+', just wait seconds...')
+    try:
+        pip_list=os.popen('pip list').read().strip()
+        if pip_list.find('pywin32') != -1:
+            pywin32_installed=True
+    except Exception, e:
+        log.error(str(e.message))
+
+    if pywin32_installed is False:
+        tmp_deps=util.sys_tmp(tmp_folder='ubx-deps')
+        for f in build_deps:
+            local_f=os.sep.join([tmp_deps, f])
+            remote_f=upd_svr + 'ubx-deps/' + f
+
+            '''if dep file in tmp, move it'''
+            if os.path.exists(util.sys_tmp(filename=f)):
+                shutil.move(util.sys_tmp(filename=f), tmp_deps+os.sep+f)
+
+            if f in os.listdir(tmp_deps):
+                if inet.diff_rsize(local_f, remote_f) is False:
+                    log.info(f+' is broken, fetch it again...')
+                    os.unlink(local_f)
+                    log.info('downloading '+remote_f+', just wait seconds...')
+                    inet.download_file(remote_f, tmp_deps)
+            else:
+                log.info(f+' is missing, download it...')
                 inet.download_file(remote_f, tmp_deps)
-        else:
-            log.info(f+' is missing, download it...')
-            inet.download_file(remote_f, tmp_deps)
 
-    backup_files(tmp_deps, dst_deps)
+        backup_files(tmp_deps, dst_deps)
+
+        os.system(os.sep.join([dst_deps, 'pywin32-219.win32-py2.7.exe']))
+
+    else:
+        print 'pywin32 is installed'
+        return
 
 def copy_recursive(src, dst):
     count_copy=0
