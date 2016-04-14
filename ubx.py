@@ -106,6 +106,11 @@ def db_migration():
             log.info('[migration] migration done')
             db.close()
 
+            # callback sync all items
+            import apps.Sync.sync as mod_sync
+            ub_sync=mod_sync.UniboxSync()
+            ub_sync.sync_all()
+
         except Exception, e:
             if e.message.find('duplicate column') != -1:
                 log.info('[migration] migration done')

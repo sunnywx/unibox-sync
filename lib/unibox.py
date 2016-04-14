@@ -182,9 +182,10 @@ def dl_deps():
         print 'pywin32 is installed'
         return
 
-def copy_recursive(src, dst):
-    count_copy=0
-    rec_files=[]
+def copy_recursive(src, dst, count_copy=0, rec_files=[]):
+    # count_copy=0
+    # rec_files=[]
+
     for f in os.listdir(src):
         cur=os.sep.join([src, f])
         dst_cur=os.sep.join([dst, f])
@@ -192,9 +193,7 @@ def copy_recursive(src, dst):
         if os.path.isdir(cur):
             if not os.path.exists(dst_cur):
                 os.mkdir(dst_cur)
-
-            copy_recursive(cur, dst_cur)
-
+            copy_recursive(cur, dst_cur, count_copy, rec_files)
         else:
             try:
                 shutil.copy2(cur, dst_cur)
@@ -247,7 +246,9 @@ def checking_update():
                 # #log.error('[updater] kill process failed: '+str(e))
 
                 os.chdir(os.path.dirname(dst))
-                cnt_copy_file, rec_files=copy_recursive(extract_folder, dst)
+
+                cnt_copy_file=0; rec_files=[]
+                cnt_copy_file, rec_files=copy_recursive(extract_folder, dst, cnt_copy_file, rec_files)
 
                 # log.info('[updater] call post-script: install.bat')
                 os.system(os.sep.join([dst, 'install.bat']))      # may raise access denied
