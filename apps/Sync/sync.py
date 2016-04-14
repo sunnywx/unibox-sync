@@ -243,6 +243,8 @@ class UniboxSync():
                     if not r.has_key(key):
                         if key in ['movie_img_url', 'movie_thumb', 'movie_thumb_url']:
                             val=r['movie_img']
+                        elif key=='release_time':
+                            val=r['play_time']
                         else:
                             val=''
                     else:
