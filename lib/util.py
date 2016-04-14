@@ -185,7 +185,7 @@ def sys_tmp(tmp_folder=None, filename=''):
     if platform.system() == 'Linux':
         tmp_base = '/tmp'
     elif platform.system() == 'Windows':
-        tmp_base = 'c:\\tmp'
+        tmp_base = 'c:\\Temp'
 
     if not tmp_folder:
         tmp_folder=tmp_base

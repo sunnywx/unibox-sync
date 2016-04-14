@@ -139,7 +139,7 @@ def download_file(url, save_folder='', tmp_folder=None):
         if platform.system() == 'Linux':
             tmp_folder = '/tmp'
         elif platform.system() == 'Windows':
-            tmp_folder = 'c:\\tmp'
+            tmp_folder = 'c:\\Temp'
 
     if not os.path.exists(tmp_folder):
         os.mkdir(tmp_folder)

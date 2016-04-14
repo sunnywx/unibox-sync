@@ -13,3 +13,5 @@ ubx.spec
 **.tar.gz
 **.tgz
 deps/
+
+user_guide.txt

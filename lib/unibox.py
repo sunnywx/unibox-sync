@@ -251,7 +251,8 @@ def checking_update():
 
                 # log.info('[updater] call post-script: install.bat')
                 os.system(os.sep.join([dst, 'install.bat']))      # may raise access denied
-                log.info('[updater] py-ubx revision to '+ online_ver +', updated ' + str(cnt_copy_file) + ' files')
+                log.info('[updater] py-ubx revision to '+ str(online_ver) +', updated ' + str(cnt_copy_file) + ' files')
+
                 for f in rec_files:
                     log.info('[updater] update file: '+str(f))
 
