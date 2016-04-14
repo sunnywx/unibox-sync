@@ -184,6 +184,7 @@ def dl_deps():
 
 def copy_recursive(src, dst):
     count_copy=0
+    rec_files=[]
     for f in os.listdir(src):
         cur=os.sep.join([src, f])
         dst_cur=os.sep.join([dst, f])
@@ -198,10 +199,11 @@ def copy_recursive(src, dst):
             try:
                 shutil.copy2(cur, dst_cur)
                 count_copy=count_copy+1
+                rec_files.append(cur)
             except Exception, e:
                 log.error('copy recursive failed: '+str(e))
 
-    return count_copy
+    return count_copy, rec_files
 
 def checking_update():
     req_online_ver=upd_svr+'update.txt'
@@ -245,11 +247,13 @@ def checking_update():
                 # #log.error('[updater] kill process failed: '+str(e))
 
                 os.chdir(os.path.dirname(dst))
-                cnt_copy_file=copy_recursive(extract_folder, dst)
+                cnt_copy_file, rec_files=copy_recursive(extract_folder, dst)
 
                 # log.info('[updater] call post-script: install.bat')
                 os.system(os.sep.join([dst, 'install.bat']))      # may raise access denied
                 log.info('[updater] py-ubx revision to '+ online_ver +', updated ' + str(cnt_copy_file) + ' files')
+                for f in rec_files:
+                    log.info('[updater] update file: '+str(f))
 
             except Exception, e:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
