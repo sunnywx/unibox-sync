@@ -67,6 +67,7 @@ class UniboxSync():
             'ad': self.server_host + '?m=Api&c=Sync&a=ad',
             'title': self.server_host + '?m=Api&c=Sync&a=title',
             'movie': self.server_host + '?m=Api&c=Sync&a=movie',
+            'movie_en': self.server_host + '?m=Api&c=Sync&a=movie_en',
             'inventory': self.server_host + '?m=Api&c=Sync&a=inventory',
             'kiosk_info': self.server_host + '?m=Api&c=Sync&a=kiosk&ownerId='
                           + self.owner_id + '&kioskId=' + self.kiosk_id,
@@ -178,24 +179,104 @@ class UniboxSync():
         sync_end=time.time()
         logger.info('time elapsed '+ str(sync_end-sync_start) + 'sec\n')
 
-    """同步电影"""
+    """
+    同步电影
+    sync table: movie, movie_en_us
+    """
     def sync_movie(self):
-        req_url=self.uri_map['movie']
+        req_url_movie=self.uri_map['movie']
+        req_url_movie_en=self.uri_map['movie_en']
+
+        sync_start=time.time()
+
         if self.force_sync is True:
             self.db.execute("DELETE FROM movie")
+            self.db.execute("DELETE FROM movie_en_us")
             """TODO also delete all movie images on local?"""
 
-        version_num=self.db.get_max_version('movie', seq_field='movie_id')
-        req_url=lib.inet.encode_url(req_url, {'version_num': version_num})
+        '''sync movie request url'''
+        version_num_movie=self.db.get_max_version('movie', seq_field='movie_id')
+        req_url_movie=lib.inet.encode_url(req_url_movie, {'version_num': version_num_movie})
 
-        logger.info('sync movie from '+req_url)
-        sync_start=time.time()
-        json_data=lib.inet.fetch_data(req_url)
+        '''sync movie_en request url'''
+        version_num_movie_en=self.db.get_max_version('movie_en_us', seq_field='movie_id')
+        req_url_movie_en=lib.inet.encode_url(req_url_movie_en, {'version_num': version_num_movie_en})
+
+        '''本地库的同步字段'''
+        sync_fields = [
+            'movie_id', 'movie_name', 'director', 'actor', 'genre', 'running_time',
+            'nation', 'release_time', 'play_time', 'dub_language', 'subtitling',
+            'audio_format', 'content_class', 'color', 'per_number', 'medium', 'bar_code',
+            'isrc_code', 'area_code', 'import_code', 'fn_name', 'box_office', 'bullet_films',
+            'issuing_company', 'copyright', 'synopsis', 'movie_desc',
+            'movie_img', 'movie_img_url', 'movie_thumb', 'movie_thumb_url', 'version_num',
+            'movie_name_pinyin', 'movie_name_fpinyin'
+        ]
+
+        is_movie_updated = is_movie_en_updated = False
+
+        logger.info('sync movie from '+req_url_movie)
+        json_data=lib.inet.fetch_data(req_url_movie)
         if json_data is None or len(json_data)==0:
             self.update_ini()
-            logger.info('already updated, end sync')
+            is_movie_updated=True
+
+        logger.info('sync movie_en_us from '+req_url_movie_en)
+        json_data_en=lib.inet.fetch_data(req_url_movie_en)
+        if json_data_en is None or len(json_data_en)==0:
+            self.update_ini()
+            is_movie_en_updated=True
+
+        if is_movie_updated and is_movie_en_updated:
+            logger.info('movie and movie_en already updated, end sync')
             return
 
+        if type(json_data) is tuple and json_data[0] == '[err]':
+            """failed to fetch data"""
+            logger.error(str(json_data))
+            return
+
+        if type(json_data_en) is tuple and json_data_en[0] == '[err]':
+            """failed to fetch data"""
+            logger.error(str(json_data_en))
+            return
+
+        data_movie = {}
+        data_movie_en = {}
+
+        def parse_item(row):
+            item = {}
+            for key in sync_fields:
+                if key == 'movie_id' and r[key] == '':
+                    continue
+                else:
+                    if not row.has_key(key):
+                        if key in ['movie_img_url', 'movie_thumb', 'movie_thumb_url']:
+                            val=row['movie_img']
+                        elif key=='release_time':
+                            #need change release_time to timestamp? /TODO
+                            val=row['play_time']
+                        else:
+                            val=''
+                    else:
+                        val=row[key]
+                    item[key] = val
+            return item
+
+        '''parse movie_en data'''
+        if not is_movie_en_updated:
+            for r in json_data_en:
+                movie_id=r['movie_id']
+                if movie_id=='':
+                    continue
+                data_movie_en[movie_id] = parse_item(r)
+
+        '''update movie_en_us'''
+        field_movie_en, params_movie_en = lib.util.unpack_data(data_movie_en)
+        aff_rows_movie_en = self.db.replace_many('movie_en_us', field_movie_en, params_movie_en)
+
+
+        '''begin sync movie data'''
         poster_prefix = self.sandbox_dir + self.conf['movie_local_folder']
         thumb_prefix = self.sandbox_dir + self.conf['moviethumb_local_folder']
         cdn_base = self.conf['cdn_base']
@@ -205,98 +286,70 @@ class UniboxSync():
         cnt_poster_ignore = cnt_poster_failed = cnt_poster_downloaded = 0
         cnt_thumb_ignore = cnt_thumb_failed = cnt_thumb_downloaded = 0
 
-        """delay update movie poster / thumbnail"""
-        """sqlite 不强制约束数据类型，integer可以插入字符串 ?"""
-        """movie_name not be null, check the DDL of movie, movie_id unique index,
-        when replace into movie, if index is changed will call update else call insert"""
-
-        field = ['movie_id', 'movie_name', 'director', 'actor', 'genre', 'running_time',
-                 'nation', 'release_time', 'play_time', 'dub_language', 'subtitling',
-                 'audio_format', 'content_class', 'color', 'per_number', 'medium', 'bar_code',
-                 'isrc_code', 'area_code', 'import_code', 'fn_name', 'box_office', 'bullet_films',
-                 'issuing_company', 'copyright', 'synopsis', 'movie_desc',
-                 'movie_img', 'movie_img_url', 'movie_thumb', 'movie_thumb_url', 'version_num',
-                 'movie_name_pinyin', 'movie_name_fpinyin']
-        data_movie = {}
-
         """hold all fail-downloaded rows"""
         records_failed = {
             'poster': [],
             'thumb': []
         }
 
-        if type(json_data) is tuple and json_data[0] == '[err]':
-            """failed to fetch data"""
-            logger.error(str(json_data))
-            return
-
-        for r in json_data:
-            """first we download movie_poster, then download thumbnail,
-            if these two are downloaded, then update this row's field, this will minimal db lock"""
-            poster_img = cdn_base + str(r['movie_img'])
-            thumb_img = cdn_base + (str(r['movie_thumb']) if r.has_key('movie_thumb') else str(r['movie_img']))
-            item = {}
-            for key in field:
-                if key == 'movie_id' and r[key] == '':
+        if not is_movie_updated:
+            for r in json_data:
+                """
+                first we download movie_poster, then download thumbnail,
+                if these two are downloaded, then update this row's field, this will minimal db lock
+                """
+                movie_id=r['movie_id']
+                if movie_id=='':
                     continue
+                data_movie[movie_id] = parse_item(r)
+
+                poster_img = cdn_base + str(r['movie_img'])
+                thumb_img = cdn_base + (str(r['movie_thumb']) if r.has_key('movie_thumb') else str(r['movie_img']))
+
+                """downloading movie poster image"""
+                logger.info('fetching movie poster: '+ poster_img)
+                fetch_poster = lib.inet.download_file(url=poster_img, save_folder=poster_prefix, tmp_folder=self.tmp_folder)
+                if fetch_poster[0] != 'file_download_failed':
+                    if fetch_poster[0] == 'file_exists':
+                        cnt_poster_ignore += 1
+                        logger.info('movie poster exists, ignored ')
+                    elif fetch_poster[0] == 'file_download_ok':
+                        logger.info('downloaded movie poster:' + str(fetch_poster[1]))
+                        cnt_poster_downloaded += 1
+                    """fetch_poster[1] as movie_img"""
+                    data_movie[r['movie_id']]['movie_img'] = fetch_poster[1]
                 else:
-                    if not r.has_key(key):
-                        if key in ['movie_img_url', 'movie_thumb', 'movie_thumb_url']:
-                            val=r['movie_img']
-                        elif key=='release_time':
-                            val=r['play_time']
-                        else:
-                            val=''
-                    else:
-                        val=r[key]
+                    """record failed row"""
+                    logger.error('failed to download poster: '+ poster_img)
+                    records_failed['poster'].append(r['movie_id'])
+                    cnt_poster_failed += 1
+                    continue
 
-                    item[key] = val
+                """downloading movie thumbnail image"""
+                logger.info('fetching movie thumbnail: '+ thumb_img)
+                fetch_thumb = lib.inet.download_file(url=thumb_img, save_folder=thumb_prefix, tmp_folder=self.tmp_folder)
+                if fetch_thumb[0] != 'file_download_failed':
+                    if fetch_thumb[0] == 'file_exists':
+                        cnt_thumb_ignore += 1
+                        logger.info('movie thumbnail exists, ignored ')
+                    elif fetch_thumb[0] == 'file_download_ok':
+                        logger.info('downloaded movie thumbnail:' + str(fetch_thumb[1]))
+                        cnt_thumb_downloaded += 1
 
-            data_movie[r['movie_id']] = item
+                    if r['movie_id'] in data_movie:
+                        data_movie[r['movie_id']]['movie_thumb'] = fetch_thumb[1]
+                else:
+                    logger.error('failed to download thumbnail: '+ thumb_img)
+                    records_failed['thumb'].append(r['movie_id'])
+                    cnt_thumb_failed += 1
+                    continue
 
-            """downloading movie poster image"""
-            logger.info('fetching movie poster: '+ poster_img )
-            fetch_poster = lib.inet.download_file(url=poster_img, save_folder=poster_prefix, tmp_folder=self.tmp_folder)
-            if fetch_poster[0] != 'file_download_failed':
-                if fetch_poster[0] == 'file_exists':
-                    cnt_poster_ignore += 1
-                    logger.info('movie poster exists, ignored ')
-                elif fetch_poster[0] == 'file_download_ok':
-                    logger.info('downloaded movie poster:' + str(fetch_poster[1]))
-                    cnt_poster_downloaded += 1
-                """fetch_poster[1] as movie_img"""
-                data_movie[r['movie_id']]['movie_img'] = fetch_poster[1]
-            else:
-                """record failed row"""
-                logger.error('failed to download poster: '+ poster_img)
-                records_failed['poster'].append(r['movie_id'])
-                cnt_poster_failed += 1
-                continue
+        """save movie data to local db"""
+        field_movie, params_movie = lib.util.unpack_data(data_movie)
+        aff_rows_movie = self.db.replace_many('movie', field_movie, params_movie)
 
-            """downloading movie thumbnail image"""
-            logger.info('fetching movie thumbnail: '+ thumb_img)
-            fetch_thumb = lib.inet.download_file(url=thumb_img, save_folder=thumb_prefix, tmp_folder=self.tmp_folder)
-            if fetch_thumb[0] != 'file_download_failed':
-                if fetch_thumb[0] == 'file_exists':
-                    cnt_thumb_ignore += 1
-                    logger.info('movie thumbnail exists, ignored ')
-                elif fetch_thumb[0] == 'file_download_ok':
-                    logger.info('downloaded movie thumbnail:' + str(fetch_thumb[1]))
-                    cnt_thumb_downloaded += 1
-                    
-                if r['movie_id'] in data_movie:
-                    data_movie[r['movie_id']]['movie_thumb'] = fetch_thumb[1]
-            else:
-                logger.error('failed to download thumbnail: '+ thumb_img)
-                records_failed['thumb'].append(r['movie_id'])
-                cnt_thumb_failed += 1
-                continue
-
-        """write params_movie_img to local db"""
-        field, params = lib.util.unpack_data(data_movie)
-        aff_rows=self.db.replace_many('movie', field, params)
-
-        logger.info('end sync movie, updated '+str(aff_rows)+' rows of movie')
+        logger.info('end sync movie, updated '+str(aff_rows_movie)+' rows')
+        logger.info('end sync movie_en_us, updated '+str(aff_rows_movie_en)+' rows')
         logger.info('downloaded '+str(cnt_poster_downloaded)+', ignored '+ str(cnt_poster_ignore)+' movie poster')
         logger.info('downloaded '+str(cnt_thumb_downloaded)+', ignored '+ str(cnt_thumb_ignore)+' movie thumbnail')
 
@@ -546,6 +599,6 @@ if __name__ == '__main__':
     sync_app=UniboxSync()
 
     try:
-        sync_app.sync_all()
+        sync_app.sync_movie()
     except Exception, err:
         logger.error('[sync_app] raise error: '+str(err))

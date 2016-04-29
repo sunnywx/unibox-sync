@@ -78,6 +78,9 @@ class Db():
                 """convert to tuple"""
                 param[i] = tuple(param[i])
 
+        if field=='' and len(param)==0:
+            return 0
+
         sql_prefix = ''
         if op == 'insert':
             sql_prefix += 'insert into '

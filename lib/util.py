@@ -186,7 +186,7 @@ def sys_tmp(tmp_folder=None, filename=''):
         tmp_base = '/tmp'
     elif platform.system() == 'Windows':
         # import tempfile
-        # print tempfile.gettempdir()
+        # print tempfile.mkdtemp()
         tmp_base = 'c:\\Temp'
 
     if not tmp_folder:
