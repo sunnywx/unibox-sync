@@ -147,12 +147,12 @@ class UniboxMonitor():
     def stat(self):
         py_svc = 'pythonservice.exe'
         if py_svc in self.get_process_list():
-            print u'UniboxSvc服务已启动'
+            print u'[monitor]svc is running'
             # pid_svc_daemon=self.get_process_list()[py_svc]
             # p=psutil.Process(pid=pid_svc_daemon)
             # print p
         else:
-            print u'UniboxSvc服务已停止'
+            print u'[monitor]svc stopped'
 
         self.endl()
 
