@@ -249,6 +249,12 @@ def checking_update():
             try:
                 cnt_copy_file, rec_files=copy_recursive(extract_folder, dst, cnt_copy_file, rec_files)
 
+                '''remove original sync_app.ini'''
+                sync_app_ini=os.sep.join([dst, 'apps/Sync/sync_app.ini'])
+                if os.path.exists(sync_app_ini):
+                    log.info('[updater] remove '+str(sync_app_ini))
+                    os.unlink(sync_app_ini)
+
                 log.info('[updater] call post-script: install.bat')
                 os.system(os.sep.join([dst, 'install.bat']))      # may raise access denied
                 log.info('[updater] py-ubx revision to '+ str(online_ver) +', updated ' + str(cnt_copy_file) + ' files')
@@ -257,8 +263,7 @@ def checking_update():
                     log.info('[updater] update file: '+str(f))
 
             except Exception, e:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                log.error(repr(traceback.format_exception(exc_type, exc_value, exc_traceback)))
+                log.error(logger.err_traceback())
 
                 '''exception raised, then rollback py-ubx'''
                 log.info('[updater] updating failed, rollback')
@@ -272,8 +277,7 @@ def checking_update():
                 svc_mgr.start()
 
     except Exception, e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        log.error(repr(traceback.format_exception(exc_type, exc_value, exc_traceback)))
+        log.error(logger.err_traceback())
 
 
 if __name__ == '__main__':
