@@ -99,29 +99,27 @@ def set_app_version():
 # 0 local == online
 # 1 local > online
 def compare_version(local_ver, online_ver):
-    suffix=['alpha', 'beta', 'rc']
-
     local_ver=local_ver.lstrip('v').rstrip('\n')
     online_ver=online_ver.lstrip('v').rstrip('\n')
 
-    if local_ver == online_ver:
-        return 0
+    # https://www.python.org/dev/peps/pep-0386/
+    from distutils.version import LooseVersion as V
+    return V(local_ver) < V(online_ver)
 
-    local_prefix=local_ver.split('-')[0]
-    online_prefix=online_ver.split('-')[0]
-
-    if local_prefix == online_prefix:
-        local_suffix=local_ver[len(local_prefix)+1:]
-        online_suffix=online_ver[len(online_prefix)+1:]
-
-        if local_suffix == '':  # stable version
-            return 1
-        if online_suffix == '':
-            return -1
-
-        return -1 if local_suffix < online_suffix else 1
-
-    return -1 if local_ver < online_ver else 1
+    # local_prefix=local_ver.split('-')[0]
+    # online_prefix=online_ver.split('-')[0]
+    # if local_prefix == online_prefix:
+    #     local_suffix=local_ver[len(local_prefix)+1:]
+    #     online_suffix=online_ver[len(online_prefix)+1:]
+    #
+    #     if local_suffix == '':  # stable version
+    #         return 1
+    #     if online_suffix == '':
+    #         return -1
+    #
+    #     return -1 if local_suffix < online_suffix else 1
+    #
+    # return -1 if local_ver < online_ver else 1
 
 
 def backup_files(from_path, to_path, clean_dst=True):
@@ -211,7 +209,7 @@ def checking_update():
         online_ver=resp.read().strip('\n')
         local_ver=get_app_version()
 
-        if compare_version(local_ver, online_ver) < 0:
+        if compare_version(local_ver, online_ver) is True:
             zip_file='py-ubx-' + online_ver + '.zip'
             log.info('[updater] download latest zip: ' + str(upd_svr+zip_file))
             inet.download_file(upd_svr + zip_file)
