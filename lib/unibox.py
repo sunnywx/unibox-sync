@@ -8,7 +8,7 @@ import logger
 import os
 import sys
 import inspect
-from zipfile import *
+import zipfile
 import urllib2
 import lib.inet as inet
 import shutil
@@ -182,8 +182,9 @@ def dl_deps():
         print 'pywin32 is installed'
         return
 
-def copy_recursive(src, dst):
-    count_copy=0
+def copy_recursive(src, dst, count_copy=0, rec_files=[]):
+    # count_copy=0
+    # rec_files=[]
     for f in os.listdir(src):
         cur=os.sep.join([src, f])
         dst_cur=os.sep.join([dst, f])
@@ -191,17 +192,17 @@ def copy_recursive(src, dst):
         if os.path.isdir(cur):
             if not os.path.exists(dst_cur):
                 os.mkdir(dst_cur)
-
-            copy_recursive(cur, dst_cur)
-
+            copy_recursive(cur, dst_cur, count_copy, rec_files)
         else:
-            try:
-                shutil.copy2(cur, dst_cur)
-                count_copy=count_copy+1
-            except Exception, e:
-                log.error('copy recursive failed: '+str(e))
+            shutil.copy2(cur, dst_cur)
+            count_copy=count_copy+1
+            rec_files.append(cur)
 
-    return count_copy
+    return count_copy, rec_files
+
+def is_svc_running():
+    import subprocess
+    return subprocess.check_output('sc query uniboxSvc').find('RUNNING') != -1
 
 def checking_update():
     req_online_ver=upd_svr+'update.txt'
@@ -211,45 +212,49 @@ def checking_update():
         local_ver=get_app_version()
 
         if compare_version(local_ver, online_ver) < 0:
-            log.info('[updater] need update, local_ver='+str(local_ver)+', online_ver='+str(online_ver) )
-            # download zip-ball
             zip_file='py-ubx-' + online_ver + '.zip'
-
-            log.info('[updater] downloading latest zip: ' + str(upd_svr) + str(zip_file) )
+            log.info('[updater] download latest zip: ' + str(upd_svr+zip_file))
             inet.download_file(upd_svr + zip_file)
 
-            zip_ubx = ZipFile(util.sys_tmp(None, zip_file), 'r')
+            zip_ubx = zipfile.ZipFile(util.sys_tmp(None, zip_file), 'r')
             extract_folder=util.sys_tmp(tmp_folder='ubx-update')
 
-            log.info('[updater] extract '+str(online_ver)+' files to '+str(extract_folder) )
+            log.info('[updater] extract UBX-'+str(online_ver)+' to: '+str(extract_folder) )
             zip_ubx.extractall(extract_folder)
 
             # os.system('NET STOP UniboxSvc')
             import svc
+            import datetime
+            import compression
+
             svc_mgr=svc.SvcManager()
             svc_mgr.stop()
 
+            old_cwd=os.getcwd()
+            os.chdir(os.path.dirname(dst))
+
+            cnt_copy_file=0
+            rec_files=[]
+
+            if is_svc_running():
+                # stop uniboxSvc failed
+                log.error('[updater] stop uniboxSvc failed, checking_update terminated')
+                return False
+
+            today = ''.join(str(datetime.date.today()).split('-'))
+            backup_ubx_zip=util.sys_tmp(None, 'ubx-'+today+'.zip')
+
+            compression.zipdir(dst, backup_ubx_zip, False)
+
             try:
-                # import psutil
-                # relative_process=['pythonservice.exe', 'net.exe', 'python.exe', 'cmd.exe']
-                # plist = {}
-                # for p in psutil.process_iter():
-                #     plist[p.name()] = p.pid
-                #
-                # try:
-                #     for x in relative_process:
-                #         if x in plist.keys():
-                #             log.info('[updater] killing process with py-ubx: '+x)
-                #             os.system('taskkill /f /im '+x)
-                # except Exception, e:
-                # #log.error('[updater] kill process failed: '+str(e))
+                cnt_copy_file, rec_files=copy_recursive(extract_folder, dst, cnt_copy_file, rec_files)
 
-                os.chdir(os.path.dirname(dst))
-                cnt_copy_file=copy_recursive(extract_folder, dst)
-
-                # log.info('[updater] call post-script: install.bat')
+                log.info('[updater] call post-script: install.bat')
                 os.system(os.sep.join([dst, 'install.bat']))      # may raise access denied
-                log.info('[updater] py-ubx revision to '+ online_ver +', updated ' + str(cnt_copy_file) + ' files')
+                log.info('[updater] py-ubx revision to '+ str(online_ver) +', updated ' + str(cnt_copy_file) + ' files')
+
+                for f in rec_files:
+                    log.info('[updater] update file: '+str(f))
 
             except Exception, e:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -258,21 +263,13 @@ def checking_update():
                 '''exception raised, then rollback py-ubx'''
                 log.info('[updater] updating failed, rollback')
 
-                # '''保留原始程序的日志和配置'''
-                # reserved_file_map={
-                #     'apps/Sync/log': 'sync_log',
-                #     'apps/Sync/sync_app.ini': 'sync_app.ini',
-                #     'apps/Monitor/log': 'monitor_log',
-                #     'apps/Monitor/monitor_app.ini': 'monitor_app.ini',
-                #     'log': 'ubx_log'
-                # }
+                '''extract backup_zip to py-ubx dir'''
+                os.chdir(dst)
+                with zipfile.ZipFile(backup_ubx_zip) as zf:
+                    zf.extractall()
 
-            # os.system('NET START UniboxSvc')
-            svc_mgr.start()
-
-        else:
-            return
-            # log.info('py-ubx is latest version: '+local_ver)
+            if not is_svc_running():
+                svc_mgr.start()
 
     except Exception, e:
         exc_type, exc_value, exc_traceback = sys.exc_info()

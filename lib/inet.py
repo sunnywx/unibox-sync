@@ -14,6 +14,7 @@ import lib.util as util
 
 import sys
 import time
+import tempfile
 
 
 """check if sync web server is available"""
@@ -111,25 +112,18 @@ def dl_hook(a,b,c):
 
 def diff_rsize(fpath, remote_path):
     """get remote file size to check if the original data"""
-    print('comparing remote:'+remote_path+' size with local:'+fpath)
+    print('diff remote file:'+remote_path+' with local:'+fpath)
     try:
-        req = urllib2.urlopen(remote_path, timeout=5)
-        rsize=req.info().getheaders('Content-Length')[0]
+        req = urllib2.urlopen(remote_path, timeout=3)
+        rsize = req.info().getheaders('Content-Length')[0]
 
         """get local file size"""
-        lsize=os.path.getsize(fpath)
+        lsize = os.path.getsize(fpath)
         if int(rsize) == int(lsize):
-            print('remote '+remote_path+' size='+ rsize+ 'bytes, equals as local')
             return True
 
     except Exception, e:
         util.log.error(str(e.message))
-        # if e.code == 404:
-        #     util.log.error(remote_path+','+str(e.msg))
-        #     return True
-        # else:
-        #     util.log.error('remote '+remote_path+' not match local, or fetch timeout')
-
         return False
 
 """download remote file"""
@@ -139,7 +133,7 @@ def download_file(url, save_folder='', tmp_folder=None):
         if platform.system() == 'Linux':
             tmp_folder = '/tmp'
         elif platform.system() == 'Windows':
-            tmp_folder = 'c:\\tmp'
+            tmp_folder = 'c:\\Temp'
 
     if not os.path.exists(tmp_folder):
         os.mkdir(tmp_folder)

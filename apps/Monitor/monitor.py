@@ -19,6 +19,8 @@ import lib.unibox as unibox
 
 import psutil
 
+import svc
+
 base_dir = os.path.abspath(os.path.dirname(inspect.getfile(inspect.currentframe())))
 logger = lib.logger.Logger('uniboxMonitor', base_dir).get()
 
@@ -147,12 +149,12 @@ class UniboxMonitor():
     def stat(self):
         py_svc = 'pythonservice.exe'
         if py_svc in self.get_process_list():
-            print u'UniboxSvc服务已启动'
+            print u'[monitor]svc is running'
             # pid_svc_daemon=self.get_process_list()[py_svc]
             # p=psutil.Process(pid=pid_svc_daemon)
             # print p
         else:
-            print u'UniboxSvc服务已停止'
+            print u'[monitor]svc stopped'
 
         self.endl()
 
@@ -255,6 +257,9 @@ class UniboxMonitor():
 
         """checking update-server"""
         unibox.checking_update()
+
+        """check svc heathy"""
+        svc.check_svc_healthy()
 
 
 if __name__ == '__main__':

@@ -9,6 +9,7 @@ import time
 import os
 import sys
 import inspect
+import traceback
 
 class Logger():
     today = ''.join(str(datetime.date.today()).split('-'))
@@ -69,4 +70,7 @@ class Logger():
             self.logger.handlers=self.logger.handlers[:2]
         return self.logger
 
-
+'''print detail error msg'''
+def err_traceback():
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    return repr(traceback.format_exception(exc_type, exc_value, exc_traceback))

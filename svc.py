@@ -43,9 +43,8 @@ def sync_worker(interval=60):
         try:
             ub_sync.sync_inventory()
             ub_sync.update_ini('svc_last_upsync')
-
         except Exception, e:
-            _log.error('[sync_worker]up sync failed: '+str(e))
+            _log.error('[svc]up sync failed: '+lib.logger.err_traceback())
 
     if sync_start - svc_last_downsync > down_sync_interval:
         """execute down-sync"""
@@ -56,13 +55,11 @@ def sync_worker(interval=60):
             ub_sync.sync_title()
             ub_sync.sync_movie()
             ub_sync.update_ini('svc_last_downsync')
-
         except Exception, e:
-            _log.error('[sync_worker]down sync failed: '+str(e))
+            _log.error('[svc]down sync failed: '+lib.logger.err_traceback())
 
     sync_end = time.time()
-    _log.logger.info('[UniboxSvc]end sync worker, time elapsed '+ str(sync_end-sync_start) + 'sec\n')
-
+    _log.logger.info('[svc]end sync worker, time elapsed '+ str(sync_end-sync_start) + 'sec\n')
     time.sleep(interval)
 
 
@@ -72,10 +69,23 @@ def monitor_worker(interval=10):
     ub_mon = mod_monitor.UniboxMonitor()
     if interval is None:
         interval = 10
-
     ub_mon.run()
     time.sleep(interval)
 
+'''
+check if svc is running, if master process is halt, so what?
+check last sync timestamp, if period is beyond threshold value, force reload svc
+'''
+# todo
+def check_svc_healthy():
+    import apps.Sync.sync as sync
+    ub_sync=sync.UniboxSync()
+    threshold=int(ub_sync.get_ini('healthy_threshold'))
+    last_sync=int(ub_sync.get_ini('last_sync'))
+    if time.time() - last_sync > threshold:
+        _log.info('[svc] check svc healthy')
+        svcMgr=SvcManager()
+        svcMgr.restart()
 
 class UniboxSvc(win32serviceutil.ServiceFramework):
     _svc_name_ = "UniboxSvc"
@@ -89,11 +99,9 @@ class UniboxSvc(win32serviceutil.ServiceFramework):
         self.logger = _log
 
     def SvcDoRun(self):
-        self.logger.info("[UniboxSvc]:service is starting")
-
+        self.logger.info("[svc]:uniboxSvc is starting")
         proc_pool=[]
         svc_interval = 10
-
         '''daemon process list'''
         fn_list = {
             'sync': (sync_worker, None),
@@ -102,19 +110,25 @@ class UniboxSvc(win32serviceutil.ServiceFramework):
 
         '''init process pool'''
         for n in fn_list.keys():
-            proc_pool.append(multiprocessing.Process(name=n, target=fn_list[n][0], args=(fn_list[n][1],)))
+            proc_pool.append(multiprocessing.Process(name=n, target=fn_list[n][0], args=(fn_list[n][1],) ) )
 
-        try:
-            while self.run:
+        '''
+        forking child process will have all the fd, sockets, thus will cause zombie connection,
+        so multiprocess handler need fallback
+        '''
+        while self.run:
+            try:
                 for p in proc_pool:
+                    # self.logger.info('[svc]current pid='+str(os.getpid()))
+
                     '''process not started'''
                     if p._popen is None:
-                        # self.logger.info('name='+str(p.name)+',pid='+str(p.pid)+' not started, start it')
                         p.start()
+                        # self.logger.info('[svc]name='+str(p.name)+',pid='+str(p.pid)+' started')
 
                     if p.is_alive() is False:
                         '''process is stopped'''
-                        # self.logger.info('name='+str(p.name)+',pid='+str(p.pid)+' stopped, terminate it')
+                        # self.logger.info('[svc]name='+str(p.name)+',pid='+str(p.pid)+' stopped')
                         p.terminate()
                         p.join(timeout=1)
 
@@ -122,16 +136,18 @@ class UniboxSvc(win32serviceutil.ServiceFramework):
                         fn=p.name
                         proc_pool.remove(p)
                         new_proc=multiprocessing.Process(name=fn, target=fn_list[fn][0], args=(fn_list[fn][1],))
-                        # self.logger.info(fn+' folk again, pid='+str(new_proc.pid))
-
                         proc_pool.append(new_proc)
                         new_proc.start()
+                        # self.logger.info('[svc]'+fn+' folk again, pid='+str(new_proc.pid))
 
-                time.sleep(svc_interval)
+            except Exception, e:
+                self.logger.error('[svc]'+lib.logger.err_traceback())
 
-        except Exception, e:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            self.logger.error(repr(traceback.format_exception(exc_type, exc_value, exc_traceback)))
+                # self.run=False
+                '''reload svc'''
+
+            time.sleep(svc_interval)
+
 
     def SvcStop(self):
         self.logger.info("unibox service is stopping....")
@@ -150,7 +166,7 @@ class SvcManager():
         try:
             subprocess.check_output('SC QUERY ' + self.svc_name)
         except Exception, e:
-            self.logger.error('[service]:'+self.svc_name + ' not installed')
+            self.logger.error('[svc]:'+self.svc_name + ' not installed')
             return False
 
         """open service control manager (SCM)"""
@@ -164,9 +180,7 @@ class SvcManager():
 
     def query(self, status):
         svcType, svcState, svcControls, err, svcErr, svcCP, svcWH = status
-
         is_running=False
-
         if svcState == win32service.SERVICE_STOPPED:
             self.logger.info("[svc] stopped")
         elif svcState == win32service.SERVICE_START_PENDING:
@@ -198,7 +212,7 @@ class SvcManager():
             os.system('net start ' + self.svc_name)
             # self.getStatus()
         except Exception, e:
-            self.logger.error(str(e))
+            self.logger.error(lib.logger.err_traceback())
 
     def stop(self):
         self.open()
@@ -207,24 +221,24 @@ class SvcManager():
             """taskkill will kill all subprocess based on pythonservice.exe"""
             st=os.system('taskkill /f /im pythonservice.exe')
             if st==0:
-                self.logger.info('UniboxSvc is stopped')
+                self.logger.info('svc stopped')
             else:
                 os.system('net stop ' + self.svc_name)
             # self.getStatus()
         except Exception, e:
-            self.logger.error(str(e))
+            self.logger.error(lib.logger.err_traceback())
 
     def restart(self):
         self.open()
+        self.logger.info('[svcMgr] reload svc')
         try:
-            st = os.system('taskkill /f /im pythonservice.exe')
-            if st != 0:
-                os.system('net stop ' + self.svc_name)
-
-            os.system('net start ' + self.svc_name)
-
+            # st_kill_python=os.system('taskkill /f /im python.exe')
+            st_kill_pysvc = os.system('taskkill /f /im pythonservice.exe')
+            st_stop_svc=os.system('net stop ' + self.svc_name)
+            st_start_svc=os.system('net start ' + self.svc_name)
         except Exception, e:
-            self.logger.error(e.message)
+            self.logger.error('[svcMgr] '+str(lib.logger.err_traceback()))
+
 
 """used by subprocess or main module"""
 if __name__ == '__main__':
