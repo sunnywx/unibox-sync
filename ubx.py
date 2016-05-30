@@ -82,14 +82,20 @@ def db_migration():
     mig_dir=cwd.replace('/', os.sep).rstrip(os.sep)+'/migration'
     app_ver=lib.unibox.get_app_version()
     # app_ver='v1.2.6-a'
-    mig_file=os.sep.join([mig_dir, 'mig_'+app_ver+'.sql'])
+    seed_f='mig_'+app_ver+'.sql'
+    mig_file=os.sep.join([mig_dir, seed_f])
+
+    def strip_mig_file():
+        '''remove additional mig file'''
+        for f in os.listdir(mig_dir):
+            if f not in ['.gitkeep', seed_f]:
+                os.unlink(os.path.join(mig_dir, f))
 
     if os.path.exists(mig_file):
         f=open(mig_file, 'rt')
         mig_sql=string.join([line for line in f.read().strip().split('\n') if line.strip() != ''], os.linesep)
         # tb_target=''
         # tb_target_struct=sync_app.db.inspect_tb(tb_target)
-
         log.info('[migration] begin migration based on '+mig_file)
         try:
             import apps.Sync.sync as sync
@@ -115,7 +121,9 @@ def db_migration():
                 log.info('[migration]'+str(e.message))
             else:
                 log.error('[migration] raise error: '+lib.logger.err_traceback())
-                sys.exit(-1)
+        finally:
+            strip_mig_file()
+
     else:
         log.info('[migration] no migration file found')
 

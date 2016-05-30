@@ -19,6 +19,8 @@ import lib.unibox as unibox
 
 import psutil
 
+import svc
+
 base_dir = os.path.abspath(os.path.dirname(inspect.getfile(inspect.currentframe())))
 logger = lib.logger.Logger('uniboxMonitor', base_dir).get()
 
@@ -255,6 +257,9 @@ class UniboxMonitor():
 
         """checking update-server"""
         unibox.checking_update()
+
+        """check svc heathy"""
+        svc.check_svc_healthy()
 
 
 if __name__ == '__main__':
