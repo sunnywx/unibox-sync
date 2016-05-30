@@ -87,7 +87,7 @@ class UniboxSync():
 
     def get_ini(self, key='last_sync'):
         if key in self.conf:
-            return int(self.conf[key])
+            return string.strip(self.conf[key])
 
     def update_ini(self, key='last_sync'):
         """update last sync timestamp"""
@@ -275,6 +275,9 @@ class UniboxSync():
         field_movie_en, params_movie_en = lib.util.unpack_data(data_movie_en)
         aff_rows_movie_en = self.db.replace_many('movie_en_us', field_movie_en, params_movie_en)
 
+        """save movie data to local db"""
+        field_movie, params_movie = lib.util.unpack_data(data_movie)
+        aff_rows_movie = self.db.replace_many('movie', field_movie, params_movie)
 
         '''begin sync movie data'''
         poster_prefix = self.sandbox_dir + self.conf['movie_local_folder']
@@ -343,10 +346,6 @@ class UniboxSync():
                     records_failed['thumb'].append(r['movie_id'])
                     cnt_thumb_failed += 1
                     continue
-
-        """save movie data to local db"""
-        field_movie, params_movie = lib.util.unpack_data(data_movie)
-        aff_rows_movie = self.db.replace_many('movie', field_movie, params_movie)
 
         logger.info('end sync movie, updated '+str(aff_rows_movie)+' rows')
         logger.info('end sync movie_en_us, updated '+str(aff_rows_movie_en)+' rows')

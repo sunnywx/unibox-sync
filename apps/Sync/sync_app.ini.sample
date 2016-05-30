@@ -11,3 +11,4 @@ inventory_sync_interval = 60
 last_sync = 0
 svc_last_downsync = 0
 svc_last_upsync = 0
+healthy_threshold=3600

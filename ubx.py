@@ -23,23 +23,22 @@ log = lib.logger.Logger().get()
 
 def usage():
     print """\
-py-ubx (Wang Xi, iwisunny@gmail.com)
-
+py-ubx (Author:Wang Xi, unibox sync and monitor cli tool)
 Usage: ubx [-opt|--option] cmd
     install             安装ubx
-    auto                安装ubx, 开机自启动
+    auto                安装ubx自启动
     start               启动ubx
     stop                停止ubx
-    status              检查ubx服务状态
+    status              检查ubx状态
     remove              卸载ubx
-    reload              重启ubx服务
+    reload              重启ubx
     -l|--log            ubx日志
     -e|--edit           ubx配置
-    -h|--help           ubx 使用帮助
-    -v|--version        ubx 版本号
+    -h|--help           ubx使用帮助
+    -v|--version        ubx版本号
     ---------------------------------------+
     -s|--sync
-        -s all          同步全部数据
+        -s all          同步所有项
         -s ad
         -s title
         -s movie
@@ -51,8 +50,8 @@ Usage: ubx [-opt|--option] cmd
         -s edit         sync配置
     ---------------------------------------+
     -m|--monitor
-        -m run          模拟监控请求
-        -m stat         单次监控汇总
+        -m run          模拟请求
+        -m stat         单次监控
         -m cpu          CPU使用率
         -m mem          内存使用率
         -m disk         硬盘使用率
@@ -83,14 +82,20 @@ def db_migration():
     mig_dir=cwd.replace('/', os.sep).rstrip(os.sep)+'/migration'
     app_ver=lib.unibox.get_app_version()
     # app_ver='v1.2.6-a'
-    mig_file=os.sep.join([mig_dir, 'mig_'+app_ver+'.sql'])
+    seed_f='mig_'+app_ver+'.sql'
+    mig_file=os.sep.join([mig_dir, seed_f])
+
+    def strip_mig_file():
+        '''remove additional mig file'''
+        for f in os.listdir(mig_dir):
+            if f not in ['.gitkeep', seed_f]:
+                os.unlink(os.path.join(mig_dir, f))
 
     if os.path.exists(mig_file):
         f=open(mig_file, 'rt')
         mig_sql=string.join([line for line in f.read().strip().split('\n') if line.strip() != ''], os.linesep)
         # tb_target=''
         # tb_target_struct=sync_app.db.inspect_tb(tb_target)
-
         log.info('[migration] begin migration based on '+mig_file)
         try:
             import apps.Sync.sync as sync
@@ -103,7 +108,7 @@ def db_migration():
             for s in mig_sql.split(os.linesep):
                 log.info('[migration] '+s)
 
-            log.info('[migration] migration done')
+            log.info('[migration] database migration done')
             db.close()
 
             # callback sync all items
@@ -113,13 +118,14 @@ def db_migration():
 
         except Exception, e:
             if e.message.find('duplicate column') != -1:
-                log.info('[migration] migration done')
+                log.info('[migration]'+str(e.message))
             else:
-                log.error('[migration] raise error: '+str(e))
-                sys.exit(-1)
+                log.error('[migration] raise error: '+lib.logger.err_traceback())
+        finally:
+            strip_mig_file()
+
     else:
         log.info('[migration] no migration file found')
-    sys.exit(0)
 
 
 def main():
@@ -162,11 +168,12 @@ def main():
                 import subprocess
                 import inspect
                 try:
+                    '''use python service'''
                     cur_dir=get_cwd()
                     call_sync = subprocess.check_output('python ' + cur_dir + 'svc.py ' + arg)
-                    log.info(call_sync)
+                    log.info('[ubx]'+str(call_sync))
                 except Exception, e:
-                    log.error(e.message)
+                    log.error('[ubx]'+lib.logger.err_traceback())
 
             elif arg in ['start', 'stop', 'status', 'reload']:
                 import svc
@@ -200,6 +207,7 @@ def main():
                 today_log=get_logfile()
                 log_file = mod_sync.base_dir + '/log/' + today_log
                 os.system('notepad ' + log_file)
+                sys.exit(0)
             elif arg=='edit':
                 conf_file = ub_sync.conf_file
                 os.system('notepad ' + conf_file)
@@ -212,13 +220,13 @@ def main():
                 if 'http://' in sync_host:
                     sync_host = sync_host.replace('http://', '')
 
-                print('===>check network connection...')
+                print('[ubx]check network connection...')
                 if lib.inet.check_connection(sync_host) is False:
                     log.error('network connection error')
                     return
-                print('===>connection ok')
-                log.info('===>begin sync ' + str(arg) + ' items...')
 
+                print('[ubx]connection seems good')
+                log.info('[ubx]begin sync ' + str(arg) + ' items')
                 try:
                     sync_st = time.time()
                     if arg == 'all':
@@ -237,23 +245,27 @@ def main():
                         ub_sync.sync_slot()
 
                     sync_ed = time.time()
-                    log.info('===>end sync ' + str(arg) + ' items, time elapsed ' + str(sync_ed - sync_st) + 'sec')
+                    log.info('[ubx]end sync ' + str(arg) + ' items, time elapsed ' + str(sync_ed - sync_st) + 'sec')
 
                 except Exception, e:
-                    exc_type, exc_value, exc_traceback = sys.exc_info()
-                    log.error(repr(traceback.format_exception(exc_type, exc_value, exc_traceback) ) )
-
-                    log.error('===>sync ' + str(arg) + ' items failed, ' + str(e))
+                    log.error('[ubx]sync ' + str(arg) + ' items failed, ' + lib.logger.err_traceback())
 
         elif cmd in ['-m', '--monitor']:
             import apps.Monitor.monitor as mod_monitor
             ub_mon = mod_monitor.UniboxMonitor()
 
             if arg == 'run':
-                print '[Monitor]Testing monitor func every 5 sec\n'
+                cnt_send=0
+                print '[ubx]testing monitor function every 5 sec\n'
                 while True:
+                    if cnt_send>=4:
+                        print 'testing reached 4 times, exit'
+                        break
+
                     ub_mon.run()
+                    cnt_send += 1
                     time.sleep(ub_mon.monitor_interval)
+
             elif arg == 'stat':
                 ub_mon.stat()
             elif arg == 'cpu':
@@ -271,20 +283,25 @@ def main():
             elif arg == 'edit':
                 conf_file = ub_mon.conf_file
                 os.system('notepad ' + conf_file)
+            sys.exit(0)
+
         else:
             if cmd in ('-v', '--version'):
                 print lib.unibox.get_app_version()
-
+                sys.exit(0)
             elif cmd in ('-h', '--help'):
                 usage()
+                sys.exit(0)
 
             elif cmd in ('-l', '--log'):
                 log_file = get_cwd() + 'log/' + get_logfile()
                 os.system('notepad ' + log_file)
+                sys.exit(0)
 
             elif cmd in ('-e', '--edit'):
                 conf_file = get_cwd()+'unibox.ini'
                 os.system('notepad ' + conf_file)
+                sys.exit(0)
 
 if __name__ == '__main__':
     main()
