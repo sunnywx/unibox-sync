@@ -81,51 +81,73 @@ def db_migration():
     cwd=get_cwd()
     mig_dir=cwd.replace('/', os.sep).rstrip(os.sep)+'/migration'
     app_ver=lib.unibox.get_app_version()
-    # app_ver='v1.2.6-a'
     seed_f='mig_'+app_ver+'.sql'
     mig_file=os.sep.join([mig_dir, seed_f])
+
+    '''special mig files defined here'''
+    mig_movie_add_pinyin='movie_add_pinyin.sql'
+    mig_title_add_screen_def='title_add_screen_def.sql'
+    exclude_files=['.gitkeep', mig_movie_add_pinyin, mig_title_add_screen_def]
+    exclude_files.append(seed_f)
 
     def strip_mig_file():
         '''remove additional mig file'''
         for f in os.listdir(mig_dir):
-            if f not in ['.gitkeep', seed_f]:
+            if f not in exclude_files:
                 os.unlink(os.path.join(mig_dir, f))
 
-    if os.path.exists(mig_file):
+    def read_mig_file(mig_file):
         f=open(mig_file, 'rt')
-        mig_sql=string.join([line for line in f.read().strip().split('\n') if line.strip() != ''], os.linesep)
-        # tb_target=''
-        # tb_target_struct=sync_app.db.inspect_tb(tb_target)
-        log.info('[migration] begin migration based on '+mig_file)
-        try:
-            import apps.Sync.sync as sync
-            sync_app=sync.UniboxSync()
-            db=sync_app.db
-            db.connect()
-            cur=db.c
+        return string.join([line for line in f.read().strip().split('\n') if line.strip() != ''], os.linesep)
+
+    try:
+        '''
+        since old machines doesn't run db:migrate, and no db version control
+        will always check if any previous migration exists, add those mig manually
+        '''
+        import apps.Sync.sync as sync
+        sync_app=sync.UniboxSync()
+        db=sync_app.db
+        db.connect()
+        cur=db.c
+
+        '''check if movie table add pinyin column'''
+        cols_movies=db.inspect_tb('movie')
+        if 'movie_name_pinyin' not in cols_movies.keys():
+            mig_sql=read_mig_file(os.sep.join([mig_dir, mig_movie_add_pinyin]))
             cur.executescript(mig_sql)
+
+        cols_title=db.inspect_tb('title')
+        if 'contents_type' not in cols_title.keys():
+            mig_sql=read_mig_file(os.sep.join([mig_dir, mig_title_add_screen_def]))
+            cur.executescript(mig_sql)
+
+        if os.path.exists(mig_file):
+            mig_sql=read_mig_file(mig_file)
+            # tb_target=''
+            # tb_target_struct=sync_app.db.inspect_tb(tb_target)
+            log.info('[migration] begin migration based on '+mig_file)
+            cur.executescript(mig_sql)
+
             """output sql each row"""
             for s in mig_sql.split(os.linesep):
                 log.info('[migration] '+s)
 
-            log.info('[migration] database migration done')
             db.close()
 
             # callback sync all items
-            import apps.Sync.sync as mod_sync
-            ub_sync=mod_sync.UniboxSync()
-            ub_sync.sync_all()
+            sync_app.sync_all()
 
-        except Exception, e:
-            if e.message.find('duplicate column') != -1:
-                log.info('[migration]'+str(e.message))
-            else:
-                log.error('[migration] raise error: '+lib.logger.err_traceback())
-        finally:
-            strip_mig_file()
+        else:
+            log.info('[migration] no migration file found')
 
-    else:
-        log.info('[migration] no migration file found')
+    except Exception, e:
+        if e.message.find('duplicate column') != -1:
+            log.info('[migration] '+str(e.message))
+        else:
+            log.error('[migration] raise error: '+lib.logger.err_traceback())
+    finally:
+        strip_mig_file()
 
 
 def main():
