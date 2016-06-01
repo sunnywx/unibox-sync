@@ -6,6 +6,7 @@ __author__ = 'wangXi'
 import string
 import sqlite3
 import time
+import os
 
 from lib import util
 
@@ -54,17 +55,39 @@ class Db():
         Db.close()
         return rows
 
-    def execute(self, sql):
+    def execute(self, sql, *args, **kwargs):
         Db.connect()
-        self.c.execute(sql)
+        self.c.execute(sql, *args, **kwargs)
         row_count=self.c.rowcount
         self.conn.commit()
         Db.close()
         """return affected rows"""
         return row_count
 
-    """process many rows, include insert and replace, use tuple as params"""
+    def execute_many(self, sql, *args, **kwargs):
+        Db.connect()
+        self.c.executemany(sql, *args, **kwargs)
+        row_count=self.c.rowcount
+        self.conn.commit()
+        Db.close()
+        """return affected rows"""
+        return row_count
 
+    '''based on cursor.executescript'''
+    def execute_file(self, sql_file):
+        f=open(sql_file, 'rt')
+        f_data=string.join([line for line in f.read().strip().split('\n') if line.strip() != ''], os.linesep)
+        f.close()
+
+        Db.connect()
+        '''ret is cursor object'''
+        self.c.executescript(f_data)
+        self.conn.commit()
+        Db.close()
+        return f_data
+
+
+    """process many rows, include insert and replace, use tuple as params"""
     def process_many(self, tb_name, op='insert', field=[], param=[]):
         len_field = 0
         if type(field) is list:
@@ -149,5 +172,4 @@ class Db():
         if type(res) is list and len(res)>0:
             for row in res:
                 struc[row[1]]=row[2]
-
         return struc

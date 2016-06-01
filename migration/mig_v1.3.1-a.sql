@@ -1,10 +1,4 @@
-alter table movie add column movie_name_pinyin text default '';
-alter table movie add column movie_name_fpinyin text default '';
-alter table title add column contents_type integer default 0;
-alter table title add column screen_def integer default 0;
-alter table title add column screen_dim integer default 0;
-
-CREATE TABLE [movie_en_us](
+CREATE TABLE IF NOT EXISTS [movie_en_us](
     [movie_id] Integer NOT NULL,
     [movie_name] text NOT NULL,
     [director] text DEFAULT '',
@@ -38,13 +32,15 @@ CREATE TABLE [movie_en_us](
     [movie_thumb_url] TEXT,
     [version_num] BIGINT(10),
     [movie_name_pinyin] text DEFAULT '',
-    [movie_name_fpinyin] text DEFAULT '');
+    [movie_name_fpinyin] text DEFAULT '',
+    [is_delete] Integer DEFAULT 0
+    );
 
-CREATE UNIQUE INDEX [movie_en_us_idx1]
+CREATE UNIQUE INDEX IF NOT EXISTS [movie_en_us_idx1]
 ON [movie_en_us](
     [movie_id]);
 
-CREATE TRIGGER [trg_movie_en_us_delete] AFTER DELETE ON [movie_en_us]
+CREATE TRIGGER IF NOT EXISTS [trg_movie_en_us_delete] AFTER DELETE ON [movie_en_us]
 BEGIN
     REPLACE INTO [tabledirty]
         ([tablename],
@@ -52,7 +48,7 @@ BEGIN
         VALUES ('movie_en_us', STRFTIME ('%s', DATETIME ('now', 'localtime')));
 END;
 
-CREATE TRIGGER [trg_movie_en_us_insert] AFTER INSERT ON [movie_en_us]
+CREATE TRIGGER IF NOT EXISTS [trg_movie_en_us_insert] AFTER INSERT ON [movie_en_us]
 BEGIN
     REPLACE INTO [tabledirty]
         ([tablename],
@@ -60,7 +56,7 @@ BEGIN
         VALUES ('movie_en_us', STRFTIME ('%s', DATETIME ('now', 'localtime')));
 END;
 
-CREATE TRIGGER [trg_movie_en_us_update] AFTER UPDATE ON [movie_en_us]
+CREATE TRIGGER IF NOT EXISTS [trg_movie_en_us_update] AFTER UPDATE ON [movie_en_us]
 BEGIN
     REPLACE INTO [tabledirty]
         ([tablename],

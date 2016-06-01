@@ -81,51 +81,99 @@ def db_migration():
     cwd=get_cwd()
     mig_dir=cwd.replace('/', os.sep).rstrip(os.sep)+'/migration'
     app_ver=lib.unibox.get_app_version()
-    # app_ver='v1.2.6-a'
     seed_f='mig_'+app_ver+'.sql'
     mig_file=os.sep.join([mig_dir, seed_f])
+
+    '''special mig files defined here'''
+    mig_movie_add_pinyin='movie_add_pinyin.sql'
+    mig_title_add_screen_def='title_add_screen_def.sql'
+
+    exclude_files=[
+        '.gitkeep',
+        mig_movie_add_pinyin,
+        mig_title_add_screen_def
+    ]
+    exclude_files.append(seed_f)
+
+    import apps.Sync.sync as sync
+    sync_app=sync.UniboxSync()
+    db=sync_app.db
 
     def strip_mig_file():
         '''remove additional mig file'''
         for f in os.listdir(mig_dir):
-            if f not in ['.gitkeep', seed_f]:
+            if f not in exclude_files:
                 os.unlink(os.path.join(mig_dir, f))
 
-    if os.path.exists(mig_file):
-        f=open(mig_file, 'rt')
-        mig_sql=string.join([line for line in f.read().strip().split('\n') if line.strip() != ''], os.linesep)
-        # tb_target=''
-        # tb_target_struct=sync_app.db.inspect_tb(tb_target)
-        log.info('[migration] begin migration based on '+mig_file)
-        try:
-            import apps.Sync.sync as sync
-            sync_app=sync.UniboxSync()
-            db=sync_app.db
-            db.connect()
-            cur=db.c
-            cur.executescript(mig_sql)
+    def fix_missing_delete_col(tb_name=''):
+        accept_tb=['inventory', 'movie', 'movie_en_us', 'title', 'title_flags']
+        if tb_name not in accept_tb:
+            return False
+        cols_tb=db.inspect_tb(tb_name)
+        if 'is_delete' not in cols_tb.keys():
+            # c.execute('INSERT INTO {} ({}) VALUES (?)'.format(self.table, a), (b,))
+            db.execute('alter table {} add column is_delete integer default 0'.format(tb_name))
+            return db.execute('delete from {}'.format(tb_name))
+
+    try:
+        '''
+        since old machines doesn't run db:migrate, and no db version control
+        will always check if any previous migration exists, add those mig manually
+        '''
+        '''inspect movie table'''
+        cols_movies=db.inspect_tb('movie')
+
+        '''
+        every time modify table structure, need empty table to run a force sync !!!
+        '''
+        '''check if is_delete in cols'''
+        fix_missing_delete_col('movie')
+
+        if 'movie_name_pinyin' not in cols_movies.keys():
+            mig_sql=db.execute_file(os.sep.join([mig_dir, mig_movie_add_pinyin]))
+            '''force to sync data'''
+            db.execute('delete from movie')
+
+        '''inspect title, title_flags table'''
+        fix_missing_delete_col('title')
+        fix_missing_delete_col('title_flags')
+
+        cols_title=db.inspect_tb('title')
+        if 'contents_type' not in cols_title.keys():
+            mig_sql=db.execute_file(os.sep.join([mig_dir, mig_title_add_screen_def]))
+            db.execute('delete from title')
+
+        if os.path.exists(mig_file):
+            # tb_target=''
+            # tb_target_struct=sync_app.db.inspect_tb(tb_target)
+            log.info('[migration] begin migration based on '+mig_file)
+            mig_sql=db.execute_file(mig_file)
+
             """output sql each row"""
             for s in mig_sql.split(os.linesep):
                 log.info('[migration] '+s)
 
-            log.info('[migration] database migration done')
             db.close()
+        else:
+            log.info('[migration] no migration file found')
 
-            # callback sync all items
-            import apps.Sync.sync as mod_sync
-            ub_sync=mod_sync.UniboxSync()
-            ub_sync.sync_all()
+        '''
+        at this point, assume all local tables struc is synced with server-side
+        do the post-mig-hook
+        '''
+        # todo
+        fix_missing_delete_col('movie_en_us')
 
-        except Exception, e:
-            if e.message.find('duplicate column') != -1:
-                log.info('[migration]'+str(e.message))
-            else:
-                log.error('[migration] raise error: '+lib.logger.err_traceback())
-        finally:
-            strip_mig_file()
+        # post-migration, sync all items
+        sync_app.sync_all()
 
-    else:
-        log.info('[migration] no migration file found')
+    except Exception, e:
+        if e.message.find('duplicate column') != -1:
+            log.info('[migration] '+str(e.message))
+        else:
+            log.error('[migration] raise error: '+lib.logger.err_traceback())
+    finally:
+        strip_mig_file()
 
 
 def main():

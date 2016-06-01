@@ -210,7 +210,7 @@ class UniboxSync():
             'isrc_code', 'area_code', 'import_code', 'fn_name', 'box_office', 'bullet_films',
             'issuing_company', 'copyright', 'synopsis', 'movie_desc',
             'movie_img', 'movie_img_url', 'movie_thumb', 'movie_thumb_url', 'version_num',
-            'movie_name_pinyin', 'movie_name_fpinyin'
+            'movie_name_pinyin', 'movie_name_fpinyin', 'is_delete'
         ]
 
         is_movie_updated = is_movie_en_updated = False
@@ -267,13 +267,25 @@ class UniboxSync():
         if not is_movie_en_updated:
             for r in json_data_en:
                 movie_id=r['movie_id']
-                if movie_id=='':
+                if movie_id == '':
                     continue
                 data_movie_en[movie_id] = parse_item(r)
 
         '''update movie_en_us'''
         field_movie_en, params_movie_en = lib.util.unpack_data(data_movie_en)
         aff_rows_movie_en = self.db.replace_many('movie_en_us', field_movie_en, params_movie_en)
+
+        '''parse movie data'''
+        if not is_movie_updated:
+            for r in json_data:
+                """
+                first we download movie_poster, then download thumbnail,
+                if these two are downloaded, then update this row's field, this will minimal db lock
+                """
+                movie_id=r['movie_id']
+                if movie_id == '':
+                    continue
+                data_movie[movie_id] = parse_item(r)
 
         """save movie data to local db"""
         field_movie, params_movie = lib.util.unpack_data(data_movie)
@@ -297,10 +309,6 @@ class UniboxSync():
 
         if not is_movie_updated:
             for r in json_data:
-                """
-                first we download movie_poster, then download thumbnail,
-                if these two are downloaded, then update this row's field, this will minimal db lock
-                """
                 movie_id=r['movie_id']
                 if movie_id=='':
                     continue
@@ -352,6 +360,14 @@ class UniboxSync():
         logger.info('downloaded '+str(cnt_poster_downloaded)+', ignored '+ str(cnt_poster_ignore)+' movie poster')
         logger.info('downloaded '+str(cnt_thumb_downloaded)+', ignored '+ str(cnt_thumb_ignore)+' movie thumbnail')
 
+        cnt_movie_deleted=self.db.execute('delete from movie where is_delete=1')
+        if cnt_movie_deleted > 0:
+            logger.info('deleted '+str(cnt_movie_deleted)+' movie items')
+
+        cnt_movie_en_deleted=self.db.execute('delete from movie_en_us where is_delete=1')
+        if cnt_movie_en_deleted > 0:
+            logger.info('deleted '+str(cnt_movie_en_deleted)+' movie_en items')
+
         self.update_ini()
         sync_end=time.time()
         logger.info('time elapsed '+ str(sync_end-sync_start) + 'sec\n')
@@ -359,6 +375,7 @@ class UniboxSync():
     """同步title & title_flags"""
     def sync_title(self):
         req_url=self.uri_map['title']
+        # self.force_sync=True
         if self.force_sync is True:
             self.db.execute("DELETE FROM title")
             self.db.execute("DELETE FROM title_flags")
@@ -388,7 +405,7 @@ class UniboxSync():
         field_flags = ['title_id', 'coming_soon_begin', 'coming_soon_end', 'hot_begin', 'hot_end',
                        'new_release_begin', 'new_release_end', 'available_begin', 'available_end',
                        'search_on_web_begin', 'search_on_web_end', 'browse_on_web_begin', 'browse_on_web_end',
-                       'best_begin', 'best_end', 'version_num']
+                       'best_begin', 'best_end', 'version_num', 'is_delete']
         param_title = []
         param_flags = []
         for r in json_data:
@@ -420,6 +437,14 @@ class UniboxSync():
 
         aff_rows_flags = self.db.replace_many('title_flags', field_flags, param_flags)
         logger.info('end sync title_flags, '+ str(aff_rows_flags) + ' rows of title_flags updated')
+
+        cnt_title_deleted=self.db.execute('delete from title where is_delete=1')
+        if cnt_title_deleted > 0:
+            logger.info('deleted '+str(cnt_title_deleted)+' title item where is_delete=1')
+
+        cnt_flags_deleted=self.db.execute('delete from title_flags where is_delete=1')
+        if cnt_flags_deleted > 0:
+            logger.info('deleted '+str(cnt_flags_deleted)+' title_flags item where is_delete=1')
 
         self.update_ini()
         sync_end=time.time()
@@ -598,6 +623,6 @@ if __name__ == '__main__':
     sync_app=UniboxSync()
 
     try:
-        sync_app.sync_movie()
+        sync_app.sync_title()
     except Exception, err:
         logger.error('[sync_app] raise error: '+str(err))
