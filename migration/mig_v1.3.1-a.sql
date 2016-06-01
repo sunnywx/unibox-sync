@@ -32,7 +32,9 @@ CREATE TABLE IF NOT EXISTS [movie_en_us](
     [movie_thumb_url] TEXT,
     [version_num] BIGINT(10),
     [movie_name_pinyin] text DEFAULT '',
-    [movie_name_fpinyin] text DEFAULT '');
+    [movie_name_fpinyin] text DEFAULT '',
+    [is_delete] Integer DEFAULT 0
+    );
 
 CREATE UNIQUE INDEX IF NOT EXISTS [movie_en_us_idx1]
 ON [movie_en_us](
