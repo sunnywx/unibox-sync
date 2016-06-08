@@ -375,10 +375,18 @@ class UniboxSync():
     """同步title & title_flags"""
     def sync_title(self):
         req_url=self.uri_map['title']
-        # self.force_sync=True
         if self.force_sync is True:
             self.db.execute("DELETE FROM title")
             self.db.execute("DELETE FROM title_flags")
+
+        '''
+        title_flags based on title's title_id to fill data
+        if title_flags is empty, need truncate title
+        #fix-bug title_flags sometimes empty
+        '''
+        cnt_row_flags=self.db.get_one('select count(`title_id`) from title_flags')
+        if cnt_row_flags[0] == 0:
+            self.db.execute("DELETE FROM title")
 
         version_num=self.db.get_max_version('title', seq_field='title_id')
         req_url=lib.inet.encode_url(req_url, {'version_num': version_num})
